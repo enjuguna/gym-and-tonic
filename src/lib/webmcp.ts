@@ -283,36 +283,31 @@ export const overloadReportTool = tool(
 export interface WebMCPStatus {
   supported: boolean;
   registered: number;
-  viaWidget?: boolean;
 }
 
 export async function registerAllTools(): Promise<WebMCPStatus> {
   const mc = (
     document as unknown as { modelContext?: { registerTool: (t: object) => Promise<unknown> } }
   ).modelContext;
+  if (!mc?.registerTool) return { supported: false, registered: 0 };
 
-  // Native WebMCP (ChatGPT built-in browser / Chrome)
-  if (mc?.registerTool) {
-    let registered = 0;
-    for (const spec of SPECS) {
-      try {
-        await mc.registerTool({
-          name: spec.name,
-          title: spec.title,
-          description: spec.description,
-          inputSchema: spec.inputSchema,
-          annotations: spec.readOnly ? { readOnlyHint: true } : {},
-          execute: (args: unknown) => spec.execute(args),
-        });
-        registered++;
-      } catch (err) {
-        console.error(`[gym-and-tonic] failed to register ${spec.name}`, err);
-      }
+  let registered = 0;
+  for (const spec of SPECS) {
+    try {
+      await mc.registerTool({
+        name: spec.name,
+        title: spec.title,
+        description: spec.description,
+        inputSchema: spec.inputSchema,
+        annotations: spec.readOnly ? { readOnlyHint: true } : {},
+        execute: (args: unknown) => spec.execute(args),
+      });
+      registered++;
+    } catch (err) {
+      console.error(`[gym-and-tonic] failed to register ${spec.name}`, err);
     }
-    return { supported: true, registered };
   }
-
-  return { supported: false, registered: 0 };
+  return { supported: true, registered };
 }
 
 export function toolSpecs() {

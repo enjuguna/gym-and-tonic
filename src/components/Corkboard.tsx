@@ -7,6 +7,7 @@ import { SceneImage } from "./ui/SceneImage";
 import { DayStory } from "./ui/DayStory";
 import { CoachVoice } from "./ui/CoachVoice";
 import { Insights } from "./ui/Insights";
+import { ConnectModal } from "./ui/ConnectModal";
 import { GHOST_COPY_KENYA, greetingEat, REFUEL_SPOTLIGHTS } from "../lib/kenyanFlavor";
 import { saveWeek, currentWeekKey } from "../lib/history";
 

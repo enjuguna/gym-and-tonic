@@ -36,7 +36,7 @@ export function ConnectModal({ onConnected }: Props) {
             <ol className="mt-1 list-inside list-decimal text-stone-600">
               <li>Open this page in <strong>ChatGPT desktop</strong> built-in browser</li>
               <li>Ask: <em>"Plan my week"</em> or <em>"What's missing?"</em></li>
-              <li>It sees all 11 tools automatically — no config needed.</li>
+              <li>It sees all tools automatically — no config needed.</li>
             </ol>
           </div>
 
