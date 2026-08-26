@@ -17,7 +17,9 @@ interface PlanState {
     sweatIsFine: boolean;
   };
 
-  placeSession: (slot: Slot, session: Session) => void;
+  activityLog: ActivityEntry[];
+
+  placeSession: (slot: Slot, session: Session, by?: "player" | "agent") => void;
   clearSlot: (slot: Slot) => void;
   setPreference: (k: keyof PlanState["preferences"], v: boolean) => void;
 
@@ -36,21 +38,40 @@ export interface Proposal {
   createdAt: number;
 }
 
+export interface ActivityEntry {
+  id: number;
+  kind: "place" | "clear" | "approve" | "reject" | "swap" | "connect";
+  focus?: string;
+  by: "player" | "agent" | "system";
+  detail?: string;
+  at: number;
+}
+
 let seq = 0;
+
+const logSeq = { n: 0 };
+
+function logActivity(s: { activityLog: ActivityEntry[] }, e: Omit<ActivityEntry, "id" | "at">): ActivityEntry[] {
+  return [...s.activityLog.slice(-9), { id: ++logSeq.n, at: Date.now(), ...e }];
+}
 
 export const usePlan = create<PlanState>((set) => ({
   plan: {},
   proposals: [],
+  activityLog: [],
   preferences: { under30: false, noLegDayExcuses: true, homeWorkout: false, sweatIsFine: true },
 
-  placeSession: (slot, session) =>
-    set((s) => ({ plan: { ...s.plan, [slot]: session } })),
+  placeSession: (slot, session, by = "player") =>
+    set((s) => ({
+      plan: { ...s.plan, [slot]: session },
+      activityLog: logActivity(s, { kind: "place", focus: session.focus, by }),
+    })),
 
   clearSlot: (slot) =>
     set((s) => {
       const plan = { ...s.plan };
       delete plan[slot];
-      return { plan };
+      return { plan, activityLog: logActivity(s, { kind: "clear", by: "player" }) };
     }),
 
   setPreference: (k, v) => set((s) => ({ preferences: { ...s.preferences, [k]: v } })),
@@ -67,7 +88,7 @@ export const usePlan = create<PlanState>((set) => ({
     set((s) => {
       const p = s.proposals.find((x) => x.id === pid);
       if (!p || p.state !== "pending") return s;
-      let next = s;
+      let next: typeof s = s;
       if (p.kind === "place") {
         const { slot, session } = p.payload as { slot: Slot; session: Session };
         next = { ...s, plan: { ...s.plan, [slot]: session } };
@@ -84,7 +105,15 @@ export const usePlan = create<PlanState>((set) => ({
         }
         next = { ...s, plan: filled };
       }
-      return { ...next, proposals: s.proposals.map((x) => (x.id === pid ? { ...x, state: "approved" as const } : x)) };
+      return {
+        ...next,
+        proposals: s.proposals.map((x) => (x.id === pid ? { ...x, state: "approved" as const } : x)),
+        activityLog: logActivity(s, {
+          kind: p.toolSource !== "manual" ? "approve" : "approve",
+          by: p.toolSource !== "manual" ? "agent" : "player",
+          detail: p.summary,
+        }),
+      };
     }),
 
   undoProposal: (pid) =>
