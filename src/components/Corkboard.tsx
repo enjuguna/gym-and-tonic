@@ -6,6 +6,7 @@ import { balanceCheck, gearList } from "../lib/coach";
 import { SceneImage } from "./ui/SceneImage";
 import { DayStory } from "./ui/DayStory";
 import { CoachVoice } from "./ui/CoachVoice";
+import { GHOST_COPY_KENYA, greetingEat, REFUEL_SPOTLIGHTS } from "../lib/kenyanFlavor";
 
 const FOCUS_META: Record<string, { icon: string; chip: string }> = {
   legs: { icon: "🦵", chip: "bg-orange-100 text-orange-800" },
@@ -16,11 +17,11 @@ const FOCUS_META: Record<string, { icon: string; chip: string }> = {
   mobility: { icon: "🧘", chip: "bg-teal-100 text-teal-800" },
 };
 
-const GHOST_COPY = ["Start strong.", "Hump-day heater?", "Midweek fire.", "Keep the streak.", "Almost there…", "Long cardio morning?", "Recovery flow?"];
+const GROUPS = ["legs", "push", "pull", "core", "cardio", "mobility"] as const;
 
 function phase(count: number): string {
   if (count < 7) return "A fresh little start";
-  if (count < 13) return "Momentum week";
+  if (count < 13) return "Momentum week — kama simba.";
   return "Finisher mode";
 }
 
@@ -56,6 +57,9 @@ export default function Planner() {
   }, [complete]);
 
   const storySession = storySlot ? plan[storySlot] : null;
+  const greeting = useMemo(() => greetingEat(new Date().getUTCHours() + 3), []);
+  const coveredGroups = useMemo(() => new Set(sessions.map((s) => s.focus)), [sessions]);
+  const spotlight = useMemo(() => REFUEL_SPOTLIGHTS[plannedCount % REFUEL_SPOTLIGHTS.length], [plannedCount]);
 
   return (
     <div className="grain min-h-screen bg-[#f7f5ef] text-[#26251f]">
@@ -97,9 +101,10 @@ export default function Planner() {
                 <span className="rounded bg-black/35 px-2 py-0.5 backdrop-blur-sm">{phase(plannedCount)}</span>
               </p>
               <h2 className="mt-2 font-serif text-4xl font-semibold tracking-tight drop-shadow-lg sm:text-5xl">
-                Your week, well trained.
+                {greeting.hello} Your week, well trained.
               </h2>
               <p className="mt-2 max-w-md text-sm opacity-90">
+                {greeting.hint}{" "}
                 {14 - plannedCount > 0
                   ? `${14 - plannedCount} chances to move something this week.`
                   : "A full week on the board. Show-off."}
@@ -115,15 +120,41 @@ export default function Planner() {
           )}
         </section>
 
-        {/* progress + verdict */}
-        <div className="-mt-4 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-[#e6e1d4] bg-white px-5 py-4 shadow-md">
+        {/* progress + coverage + verdict */}
+        <div className="-mt-4 mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-[#e6e1d4] bg-white px-5 py-4 shadow-md">
           <ProgressRing done={plannedCount} total={14} />
-          <div className="min-w-0 flex-1 pl-1">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{plannedCount} of 14 sessions planned</p>
             <p className="text-xs text-stone-400">
               {balance.totalMinutes} minutes ·{" "}
               {balance.neglected.length === 0 ? balance.verdict : `skipped: ${balance.neglected.join(", ")}`}
             </p>
+            {/* muscle-group coverage strip */}
+            <div className="mt-2 flex gap-1.5" title="Muscle groups covered this week">
+              {GROUPS.map((g) => {
+                const covered = coveredGroups.has(g);
+                return (
+                  <span
+                    key={g}
+                    className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-all ${
+                      covered ? `${FOCUS_META[g].chip}` : "bg-stone-100 text-stone-300 line-through"
+                    }`}
+                  >
+                    {FOCUS_META[g].icon} {g}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+          {/* streak flame */}
+          <div className="flex flex-col items-center" title="Sessions planned this week">
+            <span
+              className={`transition-all ${plannedCount >= 10 ? "scale-125" : plannedCount >= 5 ? "scale-110" : "scale-100"}`}
+              style={{ fontSize: `${Math.min(42, 22 + plannedCount * 1.5)}px` }}
+            >
+              🔥
+            </span>
+            <span className="font-serif text-xs font-bold text-[#bc6c25]">{plannedCount}</span>
           </div>
         </div>
 
@@ -196,7 +227,7 @@ export default function Planner() {
                           >
                             <span className="text-lg leading-none transition-transform group-hover:scale-125">+</span>
                             <span className="mt-1 text-[11px] capitalize">{when}</span>
-                            <span className="hidden text-[9px] italic opacity-60 group-hover:inline">{GHOST_COPY[d]}</span>
+                            <span className="hidden text-[9px] italic opacity-60 group-hover:inline">{GHOST_COPY_KENYA[d]}</span>
                           </button>
                         )}
                       </td>
@@ -211,8 +242,20 @@ export default function Planner() {
         {/* gear */}
         {gear.length > 0 && (
           <section className="mt-10 rounded-2xl border border-[#e6e1d4] bg-white p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">One bag. All week.</p>
-            <h3 className="mt-0.5 font-serif text-xl">Your gear list.</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">One bag. All week.</p>
+                <h3 className="mt-0.5 font-serif text-xl">Your gear list.</h3>
+              </div>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent("My gym gear this week 🏋️: " + gear.map(([i, u]) => `${i} (×${u})`).join(", ") + " — planned with Gym & Tonic")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600"
+              >
+                Share via WhatsApp
+              </a>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {gear.map(([item, uses]) => (
                 <span key={item} className="rounded-full bg-[#f7f5ef] px-3 py-1 text-xs ring-1 ring-stone-200">
@@ -221,6 +264,19 @@ export default function Planner() {
               ))}
             </div>
             <p className="mt-3 text-[11px] text-stone-400">Aggregated from every planned session — packed once, used all week.</p>
+          </section>
+        )}
+
+        {/* refuel spotlight */}
+        {plannedCount > 0 && (
+          <section className="mt-6 overflow-hidden rounded-2xl border border-[#e6e1d4] bg-white">
+            <div className="bg-[#bc6c25] px-5 py-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white">Refuel of the moment</p>
+            </div>
+            <div className="flex flex-wrap items-baseline justify-between gap-2 p-5">
+              <p className="font-serif text-xl font-semibold">{spotlight.name}</p>
+              <p className="text-xs italic text-stone-500">{spotlight.why}</p>
+            </div>
           </section>
         )}
 
@@ -263,24 +319,29 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
 
 function SlotMenu({ slot, onClose }: { slot: Slot; onClose: () => void }) {
   const placeSession = usePlan((s) => s.placeSession);
+  const [copied, setCopied] = useState(false);
+  const [d, when] = slot.split("-");
+  const dayName = DAYS[Number(d)];
+  const whenName = when === "am" ? "Morning" : "Evening";
   const generate = (intensity: "light" | "moderate" | "brutal") => {
     const order = ["legs", "push", "pull", "core", "cardio", "mobility"] as const;
     const focus = order[Number(slot.split("-")[0]) % order.length];
     import("../lib/coach").then(({ generateSession }) => placeSession(slot, generateSession(focus, intensity)));
     onClose();
   };
+  const coachPrompt = `Plan a ${when === "am" ? "morning" : "evening"} session for ${dayName} in Gym & Tonic — pick the muscle group my week is missing.`;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-[2px] sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-[2px] sm:items-center" onClick={onClose}>
       <div className="animate-rise w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Fill the slot</p>
-        <h3 className="mt-0.5 font-serif text-xl font-semibold">{slot.replace("-", " · ")}</h3>
-        <p className="mt-0.5 text-xs text-stone-400">Quick fill by intensity — or ask your coach in ChatGPT.</p>
+        <h3 className="mt-0.5 font-serif text-xl font-semibold">{dayName} · {whenName}</h3>
+        <p className="mt-0.5 text-xs text-stone-400">Quick fill by intensity — or bring your coach along.</p>
         <div className="mt-4 space-y-2">
           {(
             [
               ["light", "Easy does it", "Short and kind"],
               ["moderate", "Proper session", "The usual honest work"],
-              ["brutal", "Demolition", "Bring water. Bring excuses."],
+              ["brutal", "Demolition", "A big one — hydrate well today"],
             ] as const
           ).map(([i, label, desc]) => (
             <button key={i} onClick={() => generate(i)} className="flex w-full items-center justify-between rounded-xl border border-stone-200 px-4 py-3 text-left transition-colors hover:border-emerald-600/40 hover:bg-emerald-50">
@@ -292,8 +353,19 @@ function SlotMenu({ slot, onClose }: { slot: Slot; onClose: () => void }) {
             </button>
           ))}
         </div>
-        <button onClick={onClose} className="mt-3 w-full py-2 text-center text-xs text-stone-400 hover:text-stone-600">
-          Actually… not today.
+        <button
+          onClick={() => {
+            navigator.clipboard?.writeText(coachPrompt).then(
+              () => setCopied(true),
+              () => setCopied(false),
+            );
+          }}
+          className="mt-4 w-full rounded-xl border border-dashed border-stone-300 px-4 py-2.5 text-xs text-stone-600 transition-colors hover:border-emerald-600/40 hover:bg-emerald-50"
+        >
+          {copied ? "✓ Copied — paste it to your coach in ChatGPT" : "📋 Copy a prompt for your ChatGPT coach"}
+        </button>
+        <button onClick={onClose} className="mt-3 w-full py-2 text-center text-xs font-medium text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline">
+          Rest day instead
         </button>
       </div>
     </div>

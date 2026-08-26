@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { SceneImage } from "./SceneImage";
 import { sceneFor } from "../../lib/scenes";
 import { exerciseById } from "../../lib/coach";
+import { MARGIN_NOTES } from "../../lib/kenyanFlavor";
 import type { Session } from "../../lib/types";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -85,6 +86,11 @@ export function DayStory({
               <p className="font-serif text-sm italic text-stone-600">{session.note}</p>
             </div>
           )}
+          <div className="mt-4 border-l-2 border-stone-300 pl-3">
+            <p className="font-serif text-xs italic text-stone-400">
+              {MARGIN_NOTES[Number(d) % MARGIN_NOTES.length]}
+            </p>
+          </div>
         </div>
 
         {/* refuel recipe card — solid premium treatment, aligned to grid */}

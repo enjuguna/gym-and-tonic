@@ -44,3 +44,12 @@ body {
 }
 .animate-rise { animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-kenburns { animation: kenburns 18s ease-in-out infinite alternate; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-kenburns,
+  .animate-\[stamp-in_0\.5s_cubic-bezier\(0\.22\2c 1\2c 0\.36\2c 1\)_both\] {
+    animation: none !important;
+  }
+  * { transition-duration: 0.01ms !important; }
+}
