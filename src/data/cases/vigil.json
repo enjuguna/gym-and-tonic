@@ -1,0 +1,281 @@
+{
+  "id": "vigil-karura-house",
+  "title": "The Vigil at Karura House",
+  "tagline": "A blackout. A term sheet. Five partners. One of them stayed too late.",
+  "briefing": "Nairobi, Saturday 11 July 1998. Venture investor Charles Karura was found dead in the study of his residence at 22:47 by the house help, roughly forty minutes after a planned blackout cut power to the whole street for scheduled maintenance. On his desk: a flask of chai, still warm, and a signed term sheet that would have diluted three of his four co-founders at Meridian Holdings to near-nothing. The window was open. Rain had fallen since nine. There are no visible wounds; the doctor suspects poisoning. Everyone at the vigil — an impromptu gathering of partners and family earlier that evening — had access to the kitchen, where the chai was prepared. You are the detectives. Work the board.",
+  "victim": { "name": "Charles Karura", "role": "Managing partner, Meridian Holdings" },
+  "location": "Karura House, Nairobi",
+  "date": "1998-07-11",
+  "solution": {
+    "culpritId": "sus-grace",
+    "explanation": "Grace Akinyi prepared the chai — her prints alone on the flask — but the poison was not in the flask: it was in Charles's personal heart medication bottle, swapped two days earlier (pharmacy log shows an unscheduled collection under her name). That is why she made sure everyone saw her serve chai publicly: she knew the tea would test clean. Her 'alibi' during the blackout is the tell — she claims she was on the veranda with Wanda, but Wanda left before the lights went out (Wanda's taxi receipt, 20:12). Grace is the only person whose story requires Wanda to still be there. Motive: Charles's term sheet would have called in the loan against her mother's nursing home, collateral on her partnership debt.",
+    "keyEvidence": ["ev-pharmacy-log", "ev-taxi-receipt", "ev-med-bottle", "ev-wanda-statement", "ev-grace-statement"],
+    "redHerringSuspects": ["sus-david", "sus-njoroge"]
+  },
+  "suspects": [
+    {
+      "id": "sus-grace",
+      "name": "Grace Akinyi",
+      "role": "COO, Meridian Holdings",
+      "alibi": "Says she was on the veranda with Wanda Mwangi throughout the blackout (21:05–21:50), then found the body at 22:47 with the house help.",
+      "motive": "The new term sheet would trigger loan recall on her partnership debt — collateral is her mother's nursing home in Kisumu.",
+      "relationship": "Trusted operations chief; handled Charles's household logistics, including collecting his medication."
+    },
+    {
+      "id": "sus-wanda",
+      "name": "Wanda Mwangi",
+      "role": "Junior partner, Meridian Holdings",
+      "alibi": "Left the vigil early — a taxi receipt places her departure from the gate at 20:12, before the blackout.",
+      "motive": "Would lose her seat under the term sheet, but has already signed an offer letter with a rival firm (dated 09 July).",
+      "relationship": "Protégé of Charles; publicly clashed with him over the term sheet on Thursday."
+    },
+    {
+      "id": "sus-david",
+      "name": "David Kiprop",
+      "role": "Co-founder, Meridian Holdings",
+      "alibi": "Admits being in the study corridor around 21:15 'to confront Charles', says he lost his nerve and drove to a bar in Westlands. Bar receipt timestamps him at 21:40.",
+      "motive": "Diluted to 2% by the term sheet; the biggest financial loser.",
+      "relationship": "Old friend and first hire; debt problems and a temper documented in two HR files."
+    },
+    {
+      "id": "sus-njoroge",
+      "name":"Peter Njoroge",
+      "role": "House help / caretaker",
+      "alibi": "Claims he was in the kitchen washing up from 21:00 until he and Grace found the body. No one can corroborate 21:30–22:30.",
+      "motive": "Charles owed him three months' wages and threatened deportation when he asked for them, per his cousin's statement.",
+      "relationship": "Staff; prepared most meals, but states Grace made the chai herself that night."
+    },
+    {
+      "id": "sus-helen",
+      "name": "Helen Karura",
+      "role": "Wife of the victim",
+      "alibi": "Asleep upstairs from 21:00; corroborated partially by the neighbour's dog barking complaint filed at 21:20 ('someone let the dog out').",
+      "motive": "Stands to inherit everything regardless of the term sheet — the strongest and simplest motive.",
+      "relationship": "Second wife; pre-nuptial agreement renegotiated in March."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-term-sheet",
+      "kind": "document",
+      "title": "Draft term sheet (unsigned copy)",
+      "time": "2026-07-11 desk",
+      "content": "Meridian Holdings internal memo: restructuring would dilute David Kiprop to 2%, Peter Njoroge's employment trust to zero, trigger loan-recall on all partner debts (Grace Akinyi flagged as affected), while Helen Karura's share is protected by clause 9.3. Signed by Charles Karura only. Dated the morning of his death.",
+      "claims": [
+        { "subject": "sus-david", "predicate": "diluted-to", "object": "2%" },
+        { "subject": "sus-grace", "predicate": "loan-recall", "object": "partnership-debt" }
+      ]
+    },
+    {
+      "id": "ev-chai-flask",
+      "kind": "physical",
+      "title": "Flask of chai from the study",
+      "place": "study",
+      "content": "Steel flask recovered from the study desk. Tea residue tests negative for poisons. Only fingerprints on the flask: Grace Akinyi's. The cup Charles used matches the set in the kitchen, washed.",
+      "claims": [{ "subject": "sus-grace", "predicate": "prepared", "object": "chai" }]
+    },
+    {
+      "id": "ev-med-bottle",
+      "kind": "physical",
+      "title": "Charles's heart medication bottle",
+      "place": "study drawer",
+      "content": "Beta-blocker bottle from the study drawer, refilled 08 July. Cap threads show tool marks inconsistent with hand-opening. Toxicology pending, but the attending doctor notes Charles's pupils were pinned despite the medication being a stimulant-class dose — 'as if he hadn't taken it, or took something else instead'.",
+      "claims": [{ "subject": "medication", "predicate": "tampered", "object": "tool-marks" }]
+    },
+    {
+      "id": "ev-pharmacy-log",
+      "kind": "log",
+      "title": "Pharmacy collection log — Chemist on Riara Rd",
+      "time": "2026-07-09 16:40",
+      "content": "Unscheduled collection on 09 July, 16:40: beta-blocker 50mg, one month course, collected by 'G. Akinyi' per staff recollection and signature log. Charles's previous refill was not yet due until 19 July. Grace did not mention collecting medication to investigators, saying only that she 'looked after his errands sometimes'.",
+      "claims": [
+        { "subject": "sus-grace", "predicate": "collected", "object": "medication", "atTime": "2026-07-09T16:40" }
+      ]
+    },
+    {
+      "id": "ev-grace-statement",
+      "kind": "statement",
+      "title": "Statement — Grace Akinyi (first interview)",
+      "source": "Grace Akinyi",
+      "time": "blackout 21:05–21:50",
+      "content": "\"I made the chai myself, yes — everyone saw me carry it to him, I wanted them to see nothing was wrong between us. During the blackout I was on the veranda with Wanda almost the whole time. We talked about the company. Then Wanda went home and I stayed outside. I heard David shouting earlier, around nine-fifteen maybe. I never touched his medicine, that was his own business.\"",
+      "claims": [
+        { "subject": "sus-wanda", "predicate": "location-at", "object": "veranda", "atTime": "21:05" },
+        { "subject": "sus-grace", "predicate": "heard", "object": "david-shouting" }
+      ]
+    },
+    {
+      "id": "ev-wanda-statement",
+      "kind": "statement",
+      "title": "Statement — Wanda Mwangi (phone interview)",
+      "source": "Wanda Mwangi",
+      "time": "left 20:12",
+      "content": "\"I left before the blackout. My receipt will show twenty past eight. I was upset after the argument on Thursday but I'd said my piece. I was not on any veranda with Grace that night — I got home before nine, my mother will confirm. It worries me that someone says they were talking to me.\"",
+      "claims": [
+        { "subject": "sus-wanda", "predicate": "location-at", "object": "home", "atTime": "21:00" }
+      ]
+    },
+    {
+      "id": "ev-taxi-receipt",
+      "kind": "document",
+      "title": "Taxi receipt — Kenyatta Rd gate",
+      "time": "2026-07-11 20:12",
+      "content": "Kenya Taxi Co-op receipt: pickup Karura House gate 20:12, drop-off Kilimani 20:41. Passenger name recorded by driver per co-op policy of the era: 'Mwangi'. Weather note by driver: 'dry, lights still on.'",
+      "claims": [{ "subject": "sus-wanda", "predicate": "departed", "object": "karura-house", "atTime": "2026-07-11T20:12" }]
+    },
+    {
+      "id": "ev-david-statement",
+      "kind": "statement",
+      "title": "Statement — David Kiprop",
+      "source": "David Kiprop",
+      "time": "corridor 21:15",
+      "content": "\"Fine, I went up. I was going to tell him what I thought of his little paper. Stood outside the study — the corridor window was open, rain coming in — heard him on the phone, calm as anything, saying 'Friday works'. Lost my nerve. Went to Chelezo bar in Westlands, you'll see the receipt. I drank alone until midnight.\"",
+      "claims": [
+        { "subject": "sus-david", "predicate": "location-at", "object": "corridor", "atTime": "21:15" },
+        { "subject": "charles", "predicate": "phone-call", "object": "friday-meeting" }
+      ]
+    },
+    {
+      "id": "ev-bar-receipt",
+      "kind": "document",
+      "title": "Bar receipt — Chelezo Bar, Westlands",
+      "time": "2026-07-11 21:40",
+      "content": "Chelezo bar till receipt, table 6: two Tuskers and a soda, 21:40, card payment 'D.K.'. Waiter remembers him 'sitting alone, wet shoulders, kept checking the door'.",
+      "claims": [{ "subject": "sus-david", "predicate": "location-at", "object": "westlands-bar", "atTime": "21:40" }]
+    },
+    {
+      "id": "ev-phone-log-house",
+      "kind": "log",
+      "title": "Landline log — Karura House",
+      "time": "evening",
+      "content": "Outgoing calls from the house line: 19:58 Helen to her sister (4 min); 21:12 outgoing, 90 seconds, number belongs to the Meridian office fax line (unusual for a Saturday); no other calls between 20:00 and the discovery of the body. If Charles was on the phone 'calmly saying Friday works' at ~21:15, it does not appear on this log.",
+      "claims": [{ "subject": "charles", "predicate": "no-outgoing-call", "object": "after-2012", "atTime": "21:12" }]
+    },
+    {
+      "id": "ev-blackout-log",
+      "kind": "log",
+      "title": "KPLC maintenance notice",
+      "time": "21:05–21:50",
+      "content": "Planned outage notice for the street, laminated on the gate post since Wednesday: power off 21:05 to 21:50 for transformer maintenance. Confirms every witness's blackout window. Rain steady from 21:00 per the same notice-board weather annotation by the caretaker.",
+      "claims": []
+    },
+    {
+      "id": "ev-njoroge-statement",
+      "kind": "statement",
+      "title": "Statement — Peter Njoroge",
+      "source": "Peter Njoroge",
+      "time": "kitchen 21:00 onward",
+      "content": "\"Madam Grace made the chai herself, I only carried the tray to the corridor door for her. After that I washed dishes in the kitchen until we found Bwana Karura. The generator for the fridge kicked in when the lights died, so I had light. I did hear the study phone ring once — just once — but Bwana didn't answer it, or it stopped. Madam Helen's dog got out during the blackout, I caught it by the back door around half past nine.\"",
+      "claims": [
+        { "subject": "sus-grace", "predicate": "prepared", "object": "chai" },
+        { "subject": "charles", "predicate": "incoming-call-unanswered", "object": "once", "atTime": "~21:30" },
+        { "subject": "sus-njoroge", "predicate": "location-at", "object": "kitchen", "atTime": "21:30" }
+      ]
+    },
+    {
+      "id": "ev-cousin-statement",
+      "kind": "statement",
+      "title": "Statement — Josephat M., cousin of Peter Njoroge",
+      "source": "Josephat M.",
+      "content": "\"Peter called me in June crying about the wages. Three months, nothing. When he asked, Bwana told him the work permit was 'a favour that could be withdrawn'. Peter would never hurt anyone, but a desperate man writes desperate letters — he showed me one he drafted and burned, to the immigration office.\"",
+      "claims": [{ "subject": "sus-njoroge", "predicate": "owed", "object": "wages" }]
+    },
+    {
+      "id": "ev-helen-statement",
+      "kind": "statement",
+      "title": "Statement — Helen Karura",
+      "source": "Helen Karura",
+      "time": "upstairs from 21:00",
+      "content": "\"I took my tablets at nine and went to bed; I sleep like the dead, forgive the expression. I woke when the lights came back. Charles worked late every Saturday; I brought him nothing, touched nothing. Yes, the prenup changed in March — that was Charles's gift to me, whatever people whisper. And before you ask: the dog. Someone lets it out every time there is a gathering; it hates crowds.\"",
+      "claims": [{ "subject": "sus-helen", "predicate": "location-at", "object": "bedroom", "atTime": "21:00" }]
+    },
+    {
+      "id": "ev-dog-complaint",
+      "kind": "log",
+      "title": "Neighbour complaint card — dog barking",
+      "time": "2026-07-11 21:20",
+      "content": "Neighbour (Plot 4) phoned the estate office at 21:20 complaining 'the Karura dog has been loose and barking at the back fence for ten minutes'. Estate guard shooed it back through the side gate at 21:26. Back fence adjoins the kitchen garden and the study-wing drainpipe.",
+      "claims": [{ "subject": "dog", "predicate": "loose-at", "object": "back-fence", "atTime": "21:20" }]
+    },
+    {
+      "id": "ev-window-observation",
+      "kind": "observation",
+      "title": "Scene observation — study window & drainpipe",
+      "place": "study wing exterior",
+      "content": "Study window open despite steady rain; sill wet on the inside face only. Muddy smear on the drainpipe bracket below, height consistent with a small adult or someone braced. A single wet footprint — size 6, ridged sole — on the drainpipe concrete pad. All residents' shoes accounted for indoors except a pair of size 6 garden clogs kept by the kitchen door.",
+      "claims": [{ "subject": "unknown", "predicate": "outside-study-wing", "object": "during-rain", "atTime": "after-2100" }]
+    },
+    {
+      "id": "ev-doctor-report",
+      "kind": "document",
+      "title": "Attending doctor's preliminary note",
+      "content": "No trauma. Pupils pinpoint, inconsistent with the stimulant-class cardiac medication on scene. Time of death estimated 21:45–22:15. Suspect an ingested agent, bitter taste possibly masked by milky tea — but the tea tested clean, so consider the delivery vector elsewhere. Recommend full toxicology and a check of the deceased's personal medications.",
+      "claims": [{ "subject": "death", "predicate": "estimated", "object": "2145-2215" }]
+    },
+    {
+      "id": "ev-offer-letter",
+      "kind": "document",
+      "title": "Wanda's offer letter (rival firm)",
+      "time": "2026-07-09",
+      "content": "Signed employment offer, Apex Capital, dated 09 July, start date 03 August, 'subject to non-compete release from current partnership'. Shows Wanda had an exit planned — weakening the theory she needed Charles dead over a term sheet that would no longer matter to her.",
+      "claims": [{ "subject": "sus-wanda", "predicate": "signed", "object": "rival-offer", "atTime": "2026-07-09" }]
+    },
+    {
+      "id": "ev-visitors-log",
+      "kind": "log",
+      "title": "Visitor register — vigil attendees",
+      "time": "evening",
+      "content": "Gate register: 18:30 David Kiprop; 18:44 Wanda Mwangi; 19:02 Grace Akinyi; 19:15 Helen Karura (returned from her sister's); 20:12 Wanda Mwangi out; no other entries or exits until the ambulance at 23:10. The estate guard on duty confirms 'no visitors after eight, nobody left after Ms Mwangi except the ambulance.'",
+      "claims": [
+        { "subject": "sus-wanda", "predicate": "departed", "object": "karura-house", "atTime": "2026-07-11T20:12" },
+        { "subject": "everyone-else", "predicate": "present", "object": "karura-house" }
+      ]
+    },
+    {
+      "id": "ev-nursing-home-letter",
+      "kind": "document",
+      "title": "Bank letter — Kisumu Nursing Home loan",
+      "time": "2026-07-08",
+      "content": "Demand letter dated 08 July to Grace Akinyi: facility review triggered 'by forthcoming changes in partner equity'; full recall within 30 days unless restructured. Collateral listed: property in Kisumu operating as Praise Nursing Home. Grace had underlined '30 days' twice.",
+      "claims": [{ "subject": "sus-grace", "predicate": "faced", "object": "loan-recall" }]
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "con-veranda",
+      "aId": "ev-grace-statement",
+      "bId": "ev-taxi-receipt",
+      "summary": "Grace claims she spent the blackout on the veranda with Wanda, but the taxi receipt and visitor register place Wanda leaving at 20:12 — before the blackout began."
+    },
+    {
+      "id": "con-phone",
+      "aId": "ev-david-statement",
+      "bId": "ev-phone-log-house",
+      "summary": "David says he heard Charles calmly on a call saying 'Friday works' around 21:15, but the landline log shows no outgoing call after 20:12 except a 90-second call at 21:12 to the Meridian fax line."
+    },
+    {
+      "id": "con-tea-vs-meds",
+      "aId": "ev-chai-flask",
+      "bId": "ev-doctor-report",
+      "summary": "The chai tested clean, yet the doctor believes poison was ingested with something milky — pointing away from the flask entirely, toward Charles's other consumables."
+    },
+    {
+      "id": "con-meds-timing",
+      "aId": "ev-med-bottle",
+      "bId": "ev-pharmacy-log",
+      "summary": "The medication bottle was refilled 08 July with tool-marked cap damage, and the pharmacy log shows Grace collected it early, on 09 July, without mentioning it."
+    },
+    {
+      "id": "con-footprint",
+      "aId": "ev-window-observation",
+      "bId": "ev-visitors-log",
+      "summary": "A size-6 footprint sits under the study drainpipe, but every attendee's footwear was indoors; the size-6 garden clogs by the kitchen door belong to whoever works closest to that door."
+    },
+    {
+      "id": "con-njoroge-kitchen",
+      "aId": "ev-njoroge-statement",
+      "bId": "ev-dog-complaint",
+      "summary": "Njoroge claims he was washing dishes in a lit kitchen the whole blackout, yet also says he was chasing the dog at the back fence at 21:30 — the exact window nobody can corroborate, beside the study-wing drainpipe."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+---
+import { toolSpecs } from "../lib/webmcp";
+const specs = toolSpecs();
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cold Case — Site tools reference</title>
+  </head>
+  <body class="min-h-screen bg-[#241c14] px-4 py-10 text-amber-50">
+    <main class="mx-auto max-w-3xl">
+      <a href="/" class="text-sm text-amber-300/60 hover:underline">← Back to the case</a>
+      <h1 class="mt-3 text-3xl font-bold tracking-tight">Cold Case site tools</h1>
+      <p class="mt-2 text-amber-100/80">
+        Cold Case registers these {specs.length} tools with any WebMCP-compatible agent.
+        The agent searches and reasons; every board write is a proposal the player approves.
+        The agent can never accuse — it may only request that the player consider an accusation.
+      </p>
+      <div class="mt-8 space-y-5">
+        {specs.map((t) => (
+          <section class="rounded-xl bg-[#2e241b] p-5 ring-1 ring-amber-100/10">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-mono text-lg font-semibold">{t.name}</h2>
+              <span class={`rounded-full px-2 py-0.5 text-xs ${t.readOnly ? "bg-sky-900/70 text-sky-200" : "bg-emerald-900/70 text-emerald-200"}`}>
+                {t.readOnly ? "read-only" : "writes via player approval"}
+              </span>
+            </div>
+            <p class="mt-1 text-sm text-amber-100/75">{t.description}</p>
+            <details class="mt-3">
+              <summary class="cursor-pointer text-xs uppercase tracking-wide text-amber-200/50">Input schema</summary>
+              <pre class="mt-2 overflow-x-auto rounded-lg bg-black/40 p-3 text-xs text-amber-100/90">{JSON.stringify(t.inputSchema, null, 2)}</pre>
+            </details>
+          </section>
+        ))}
+      </div>
+    </main>
+  </body>
+</html>
