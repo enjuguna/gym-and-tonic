@@ -13,6 +13,16 @@ export function CoachVoice({ mcpConnected }: { mcpConnected: boolean }) {
   const typing = useRef(false);
   const announcedConnection = useRef(false);
 
+  // external components can enqueue lines via a custom event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail;
+      if (text) enqueue(text);
+    };
+    window.addEventListener("gt-coach-say", handler);
+    return () => window.removeEventListener("gt-coach-say", handler);
+  }, []);
+
   // announce connection once
   useEffect(() => {
     if (mcpConnected && !announcedConnection.current) {

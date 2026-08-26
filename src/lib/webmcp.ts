@@ -3,6 +3,7 @@
 
 import { usePlan, DAYS } from "./store";
 import { EXERCISES, balanceCheck, gearList, generateSession, exerciseById } from "./coach";
+import { overloadCheck } from "./history";
 import type { Session } from "./types";
 
 type Exec = (args: any) => unknown;
@@ -217,6 +218,63 @@ export const clearSlotTool = tool(
     if (!usePlan.getState().plan[slot]) return { error: `Slot ${slot} is already empty.` };
     const id = usePlan.getState().applyProposal({ kind: "clear", summary, toolSource: "clear_slot", payload: { slot } });
     return { proposalId: id, status: "pending-player-approval" };
+  },
+);
+
+export const fillWeekTool = tool(
+  {
+    name: "fill_week",
+    title: "Propose a full week",
+    description:
+      "Analyzes balance, then stages ONE proposal that fills every empty weekday-evening slot (Mon-Fri PM) with sessions chosen to cover neglected muscle groups. The player approves or rejects the whole week at once. Prefer check_balance first so your summary explains the choices.",
+    inputSchema: obj({ summary: { type: "string", description: "Your reasoning, e.g. 'Legs and cardio are neglected — filled with those.'" } }, ["summary"]),
+  },
+  ({ summary }: { summary: string }) => {
+    const plan = usePlan.getState().plan;
+    const empty = [0, 1, 2, 3, 4].map((d) => `${d}-pm` as const).filter((s) => !(s as string in plan));
+    if (!empty.length) return { error: "Week is already full (Mon–Fri PM)." };
+    // choose focuses for the most-neglected groups
+    const r = balanceCheck(Object.values(plan));
+    const neglectedFirst = [...r.neglected, ...FOCUS].filter(
+      (g, i, arr) => arr.indexOf(g) === i,
+    );
+    const fills = empty.map((slot, i) => ({
+      slot,
+      session: generateSession(neglectedFirst[i % neglectedFirst.length] as Session["focus"], "moderate"),
+    }));
+    const id = usePlan.getState().applyProposal({
+      kind: "fill-week",
+      summary,
+      toolSource: "fill_week",
+      payload: { fills },
+    });
+    return {
+      proposalId: id,
+      status: "pending-player-approval",
+      slotsFilled: fills.length,
+      breakdown: fills.map((f) => ({ slot: f.slot, focus: f.session.focus, title: f.session.title })),
+    };
+  },
+);
+
+export const overloadReportTool = tool(
+  {
+    name: "overload_report",
+    title: "Progressive-overload report",
+    description:
+      "Compares this week's minutes per muscle group against recorded history (previous weeks stored on-device). Returns per-group deltas with advice and a headline. Use it to ground progression claims before proposing sessions.",
+    inputSchema: obj({}),
+    readOnly: true,
+  },
+  () => {
+    let hist: { weekKey: string; sessions: Session[]; completedAt: number }[] = [];
+    try {
+      hist = JSON.parse(localStorage.getItem("gt_history") ?? "[]");
+    } catch { /* none */ }
+    // overloadCheck is a pure function over (thisWeek, history) — reuse it.
+    const plan = Object.values(usePlan.getState().plan);
+    const r = overloadCheck(plan, hist);
+    return { comparedAgainst: hist.length >= 2 ? hist[hist.length - 2].weekKey : undefined, ...r };
   },
 );
 

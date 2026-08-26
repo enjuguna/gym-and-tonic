@@ -6,7 +6,14 @@ import { balanceCheck, gearList } from "../lib/coach";
 import { SceneImage } from "./ui/SceneImage";
 import { DayStory } from "./ui/DayStory";
 import { CoachVoice } from "./ui/CoachVoice";
+import { Insights } from "./ui/Insights";
 import { GHOST_COPY_KENYA, greetingEat, REFUEL_SPOTLIGHTS } from "../lib/kenyanFlavor";
+import { saveWeek, currentWeekKey } from "../lib/history";
+
+/** Ask the coach voice to say something. */
+function enqueueCoachLine(text: string) {
+  window.dispatchEvent(new CustomEvent("gt-coach-say", { detail: text }));
+}
 
 const FOCUS_META: Record<string, { icon: string; chip: string }> = {
   legs: { icon: "🦵", chip: "bg-orange-100 text-orange-800" },
@@ -52,9 +59,11 @@ export default function Planner() {
     if (complete && !stampedRef.current) {
       stampedRef.current = true;
       import("../lib/sound").then(({ sound }) => sound.sting(true));
+      // archive this week so next week's overload report has history
+      saveWeek(currentWeekKey(), sessions);
     }
     if (!complete) stampedRef.current = false;
-  }, [complete]);
+  }, [complete, sessions]);
 
   const storySession = storySlot ? plan[storySlot] : null;
   const greeting = useMemo(() => greetingEat(new Date().getUTCHours() + 3), []);
@@ -162,18 +171,30 @@ export default function Planner() {
         {pending.length > 0 && (
           <section className="mb-8 space-y-2">
             <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Your coach proposes…</h3>
-            {pending.map((p) => (
+            {pending.map((p) => {
+              const isAgent = p.toolSource !== "manual";
+              return (
               <div key={p.id} className="animate-rise flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-emerald-700/20 bg-emerald-50 px-4 py-3">
                 <span className="rounded-md bg-emerald-600/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
                   {p.kind.replace("-", " ")}
                 </span>
                 <span className="min-w-0 flex-1 text-sm">{p.summary}</span>
                 <span className="flex gap-2">
-                  <button onClick={() => approve(p.id)} className="rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600">Approve ✓</button>
+                  <button onClick={() => { approve(p.id); if (isAgent) enqueueCoachLine("Good call. Into the programme."); }} className="rounded-lg bg-emerald-700 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600">Approve ✓</button>
                   <button onClick={() => undo(p.id)} className="rounded-lg border border-stone-300 px-3.5 py-1.5 text-xs text-stone-600 hover:bg-white">Reject</button>
+                  {isAgent && (
+                    <button
+                      onClick={() => enqueueCoachLine(`Fair challenge. ${p.summary} — but check_balance says the gap is real. Want a lighter version instead?`)}
+                      title="Ask your coach to defend this proposal"
+                      className="rounded-lg border border-stone-300 px-3.5 py-1.5 text-xs text-stone-600 hover:bg-white"
+                    >
+                      🤔 Why?
+                    </button>
+                  )}
                 </span>
               </div>
-            ))}
+              );
+            })}
           </section>
         )}
 
@@ -238,6 +259,9 @@ export default function Planner() {
             </tbody>
           </table>
         </div>
+
+        {/* insights: volume + overload */}
+        {plannedCount > 0 && <Insights />}
 
         {/* gear */}
         {gear.length > 0 && (
