@@ -69,13 +69,19 @@ export default function Planner() {
           <div className="ml-auto flex items-center gap-2">
             {mcpStatus && (
               <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                title={
+                  mcpStatus.supported
+                    ? "Your AI coach can plan sessions through this page's site tools."
+                    : "Open in Chrome with WebMCP or the ChatGPT desktop app to bring your coach."
+                }
+                className={`inline-flex cursor-help items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
                   mcpStatus.supported
                     ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20"
-                    : "bg-stone-200/60 text-stone-500"
+                    : "bg-stone-200/60 text-stone-600 ring-1 ring-stone-400/20"
                 }`}
               >
-                {mcpStatus.supported ? `WebMCP · ${mcpStatus.registered} tools` : "solo mode"}
+                <span className={`h-1.5 w-1.5 rounded-full ${mcpStatus.supported ? "animate-pulse bg-emerald-600" : "bg-stone-500"}`} />
+                {mcpStatus.supported ? `Coach connected · ${mcpStatus.registered} tools` : "Solo — no coach connected"}
               </span>
             )}
           </div>
@@ -86,9 +92,11 @@ export default function Planner() {
         {/* hero */}
         <section className="animate-rise relative mb-8 overflow-hidden rounded-3xl shadow-lg">
           <SceneImage scene="hero-week" kenburns className="h-64 sm:h-72">
-            <div className="flex h-full flex-col justify-end p-7 text-white">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">{phase(plannedCount)}</p>
-              <h2 className="mt-1 font-serif text-4xl font-semibold tracking-tight drop-shadow sm:text-5xl">
+            <div className="flex h-full flex-col justify-end bg-gradient-to-t from-black/70 via-black/25 to-black/40 p-7 text-white">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] drop-shadow-md">
+                <span className="rounded bg-black/35 px-2 py-0.5 backdrop-blur-sm">{phase(plannedCount)}</span>
+              </p>
+              <h2 className="mt-2 font-serif text-4xl font-semibold tracking-tight drop-shadow-lg sm:text-5xl">
                 Your week, well trained.
               </h2>
               <p className="mt-2 max-w-md text-sm opacity-90">
@@ -108,7 +116,7 @@ export default function Planner() {
         </section>
 
         {/* progress + verdict */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#e6e1d4] bg-white px-5 py-4">
+        <div className="-mt-4 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-[#e6e1d4] bg-white px-5 py-4 shadow-md">
           <ProgressRing done={plannedCount} total={14} />
           <div className="min-w-0 flex-1 pl-1">
             <p className="text-sm font-medium">{plannedCount} of 14 sessions planned</p>
@@ -235,7 +243,7 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
   const c = 2 * Math.PI * r;
   const pct = Math.min(1, done / total);
   return (
-    <div className="relative h-16 w-16 shrink-0">
+    <div className="relative h-20 w-20 shrink-0 -my-2">
       <svg viewBox="0 0 64 64" className="h-full w-full -rotate-90">
         <circle cx="32" cy="32" r={r} fill="none" stroke="#e6e1d4" strokeWidth="6" />
         <circle

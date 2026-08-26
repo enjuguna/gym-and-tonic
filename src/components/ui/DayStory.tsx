@@ -26,23 +26,30 @@ export function DayStory({
   }, [onClose]);
 
   return (
-    <section className="animate-rise mb-8 overflow-hidden rounded-3xl border border-[#e6e1d4] bg-white shadow-xl">
+    <section className="animate-rise mb-8 overflow-hidden rounded-3xl border border-[#e6e1d4] bg-white shadow-xl ring-4 ring-[#31572c]/[0.06]">
+      {/* spread label — clarifies this is a story panel, not a modal */}
+      <div className="flex items-center justify-between border-b border-[#e6e1d4] px-6 py-2.5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+          📖 Session story
+        </p>
+        <button
+          onClick={onClose}
+          className="rounded-full px-3 py-1 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
+        >
+          Close story ✕
+        </button>
+      </div>
+
       <SceneImage scene={scene} kenburns className="h-52 sm:h-64">
-        <div className="flex h-full flex-col justify-end p-6 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-80">
-            {DAYS[Number(d)]} · {when === "am" ? "Morning" : "Evening"} · {session.intensity}
+        <div className="flex h-full flex-col justify-end bg-gradient-to-t from-black/60 via-black/10 to-black/30 p-6 text-white">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] drop-shadow">
+            {DAYS[Number(d)]} · {when === "am" ? "Morning" : "Evening"} ·{" "}
+            <span className="rounded bg-white/15 px-1.5 py-0.5 backdrop-blur-sm">{session.intensity}</span>
           </p>
-          <h2 className="font-serif text-3xl font-semibold tracking-tight drop-shadow-sm sm:text-4xl">
+          <h2 className="mt-1 font-serif text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">
             {session.title}
           </h2>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-sm text-white hover:bg-black/60"
-        >
-          ✕
-        </button>
       </SceneImage>
 
       <div className="grid gap-6 p-6 sm:grid-cols-[1fr_220px]">
@@ -80,16 +87,20 @@ export function DayStory({
           )}
         </div>
 
-        {/* refuel recipe card */}
+        {/* refuel recipe card — solid premium treatment, aligned to grid */}
         {session.refuel && (
-          <aside className="self-start rounded-xl border-2 border-dashed border-[#bc6c25]/40 bg-[#fdf9f3] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#bc6c25]">
-              Post-workout kitchen
-            </p>
-            <p className="mt-1 font-serif text-lg font-semibold leading-tight">{session.refuel}</p>
-            <p className="mt-2 text-xs italic leading-relaxed text-stone-400">
-              Recovery starts in the kitchen. Eat like you mean it.
-            </p>
+          <aside className="self-start overflow-hidden rounded-xl border border-[#e6e1d4] bg-white shadow-sm">
+            <div className="bg-[#bc6c25] px-4 py-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                Post-workout kitchen
+              </p>
+            </div>
+            <div className="p-4">
+              <p className="font-serif text-lg font-semibold leading-tight">{session.refuel}</p>
+              <p className="mt-2 text-xs italic leading-relaxed text-stone-400">
+                Recovery starts in the kitchen. Eat like you mean it.
+              </p>
+            </div>
           </aside>
         )}
       </div>
