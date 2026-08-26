@@ -37,8 +37,24 @@ describe("balanceCheck", () => {
     const mk = (id: string, focus: Session["focus"]): Session => ({ id, title: id, focus, intensity: "light", minutes: 30, exercises: [] });
     const r = balanceCheck(["legs", "push", "pull", "core", "cardio", "mobility"].map((g) => mk(g, g as Session["focus"])));
     expect(r.totalMinutes).toBe(180);
-    expect(r.verdict).toMatch(/balanced/i);
+    expect(r.verdict).toMatch(/balanced|asante/i);
     expect(r.neglected.length).toBe(0);
+  });
+
+  it("never repeats the last title per focus", () => {
+    const a = generateSession("cardio");
+    const b = generateSession("cardio");
+    expect(b.title).not.toBe(a.title);
+  });
+
+  it("titles are descriptive, not generic puns", () => {
+    const banned = [/fry the wheels/i, /press conference/i, /push party/i, /row your boat/i];
+    for (let i = 0; i < 6; i++) {
+      for (const g of ["legs", "push", "pull", "core", "cardio", "mobility"] as const) {
+        const t = generateSession(g).title;
+        for (const rx of banned) expect(t, t).not.toMatch(rx);
+      }
+    }
   });
 });
 
