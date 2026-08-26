@@ -39,7 +39,7 @@ export default function Planner() {
   const undo = usePlan((s) => s.undoProposal);
   const placeSession = usePlan((s) => s.placeSession);
   const clearSlot = usePlan((s) => s.clearSlot);
-  const [mcpStatus, setMcpStatus] = useState<{ supported: boolean; registered: number } | null>(null);
+  const [mcpStatus, setMcpStatus] = useState<import("../lib/webmcp").WebMCPStatus | null>(null);
   const [slotMenu, setSlotMenu] = useState<Slot | null>(null);
   const [storySlot, setStorySlot] = useState<Slot | null>(null);
   const stampedRef = useRef(false);
@@ -80,21 +80,36 @@ export default function Planner() {
           </h1>
           <span className="hidden text-sm italic text-stone-400 sm:inline">a little less “should I train today?”</span>
           <div className="ml-auto flex items-center gap-2">
-            {mcpStatus && (
+            {mcpStatus && !mcpStatus.supported && (
+              <button
+                onClick={async () => {
+                  // retry registration — this time the fallback widget loads
+                  const { registerAllTools } = await import("../lib/webmcp");
+                  const status = await registerAllTools();
+                  setMcpStatus(status);
+                  if (status.supported) enqueueCoachLine("Your coach just walked in — kit on, whistle ready.");
+                }}
+                title="Load the WebMCP widget to connect Claude Desktop, Cursor or any MCP client as your coach"
+                className="rounded-full bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-[0.98]"
+              >
+                ⚡ Connect your coach
+              </button>
+            )}
+            {mcpStatus?.supported && (
               <span
                 title={
-                  mcpStatus.supported
-                    ? "Your AI coach can plan sessions through this page's site tools."
-                    : "Open in Chrome with WebMCP or the ChatGPT desktop app to bring your coach."
+                  mcpStatus.viaWidget
+                    ? "Connected through the WebMCP widget — your MCP client can call these tools."
+                    : "Your AI coach can plan sessions through this page's site tools."
                 }
                 className={`inline-flex cursor-help items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
-                  mcpStatus.supported
-                    ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20"
-                    : "bg-stone-200/60 text-stone-600 ring-1 ring-stone-400/20"
+                  mcpStatus.viaWidget
+                    ? "bg-sky-100 text-sky-800 ring-1 ring-sky-600/20"
+                    : "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20"
                 }`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${mcpStatus.supported ? "animate-pulse bg-emerald-600" : "bg-stone-500"}`} />
-                {mcpStatus.supported ? `Coach connected · ${mcpStatus.registered} tools` : "Solo — no coach connected"}
+                <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${mcpStatus.viaWidget ? "bg-sky-500" : "bg-emerald-600"}`} />
+                Coach connected · {mcpStatus.registered} tools{mcpStatus.viaWidget ? " (widget)" : ""}
               </span>
             )}
           </div>

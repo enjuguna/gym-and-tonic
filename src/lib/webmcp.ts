@@ -5,6 +5,7 @@ import { usePlan, DAYS } from "./store";
 import { EXERCISES, balanceCheck, gearList, generateSession, exerciseById } from "./coach";
 import { overloadCheck } from "./history";
 import type { Session } from "./types";
+import { ensureWidget } from "./webmcpWidget";
 
 type Exec = (args: any) => unknown;
 
@@ -283,31 +284,61 @@ export const overloadReportTool = tool(
 export interface WebMCPStatus {
   supported: boolean;
   registered: number;
+  viaWidget?: boolean;
 }
 
 export async function registerAllTools(): Promise<WebMCPStatus> {
   const mc = (
     document as unknown as { modelContext?: { registerTool: (t: object) => Promise<unknown> } }
   ).modelContext;
-  if (!mc?.registerTool) return { supported: false, registered: 0 };
 
-  let registered = 0;
-  for (const spec of SPECS) {
-    try {
-      await mc.registerTool({
-        name: spec.name,
-        title: spec.title,
-        description: spec.description,
-        inputSchema: spec.inputSchema,
-        annotations: spec.readOnly ? { readOnlyHint: true } : {},
-        execute: (args: unknown) => spec.execute(args),
-      });
-      registered++;
-    } catch (err) {
-      console.error(`[gym-and-tonic] failed to register ${spec.name}`, err);
+  // Native WebMCP (ChatGPT built-in browser / Chrome)
+  if (mc?.registerTool) {
+    let registered = 0;
+    for (const spec of SPECS) {
+      try {
+        await mc.registerTool({
+          name: spec.name,
+          title: spec.title,
+          description: spec.description,
+          inputSchema: spec.inputSchema,
+          annotations: spec.readOnly ? { readOnlyHint: true } : {},
+          execute: (args: unknown) => spec.execute(args),
+        });
+        registered++;
+      } catch (err) {
+        console.error(`[gym-and-tonic] failed to register ${spec.name}`, err);
+      }
     }
+    return { supported: true, registered };
   }
-  return { supported: true, registered };
+
+  // Fallback: open-source widget bridge for any MCP client
+  try {
+    await ensureWidget();
+    const w = window.webmcp;
+    if (w?.registerTool) {
+      let registered = 0;
+      for (const spec of SPECS) {
+        try {
+          w.registerTool(
+            spec.name,
+            `${spec.title} — ${spec.description}`,
+            spec.inputSchema,
+            (args: unknown) => spec.execute(args),
+          );
+          registered++;
+        } catch (err) {
+          console.error(`[gym-and-tonic] widget registration failed for ${spec.name}`, err);
+        }
+      }
+      return { supported: true, registered, viaWidget: true };
+    }
+  } catch (err) {
+    console.warn("[gym-and-tonic] fallback widget unavailable", err);
+  }
+
+  return { supported: false, registered: 0 };
 }
 
 export function toolSpecs() {
