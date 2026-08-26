@@ -1,0 +1,16 @@
+{
+  "name": "Gym & Tonic — Weekly Training Planner",
+  "short_name": "Gym&Tonic",
+  "description": "Plan your training week with an AI coach — every change staged for your approval.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f5ef",
+  "theme_color": "#31572c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
