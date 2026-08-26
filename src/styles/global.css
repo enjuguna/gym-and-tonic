@@ -1,1 +1,8 @@
 @import "tailwindcss";
+@import "./tokens.css";
+
+/* font utility bridging Tailwind's font-serif to Fraunces */
+@theme {
+  --font-serif: "Fraunces Variable", Georgia, serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
