@@ -12,7 +12,7 @@ export const EXERCISES: Exercise[] = [
   { id: "ex-hlr", name: "Hanging leg raises", group: "core", duration: 6, equipment: ["bar"], cues: "Curl the pelvis. Toes to the sky, ego to the floor." },
   { id: "ex-run", name: "Karura trail run", group: "cardio", duration: 30, equipment: [], cues: "Red dirt underfoot, canopy overhead. Zone 2 — gossip pace." },
   { id: "ex-skipping", name: "Skipping rope", group: "cardio", duration: 10, equipment: ["rope"], cues: "Wrists spin it, not arms. Light feet, quiet landings." },
-  { id: "ex-yoga", name: "Mobility flow", group: "mobility", duration: 20, equipment: ["mat"], cues: "Slow exhale into every stretch. Pole pole ndiyo mwendo." },
+  { id: "ex-yoga", name: "Mobility flow", group: "mobility", duration: 20, equipment: ["mat"], cues: "Slow exhale into every stretch. Slow is smooth, smooth is fast." },
   { id: "ex-kettlebell", name: "Kettlebell swings", group: "cardio", duration: 8, equipment: ["kettlebell"], cues: "Hips snap, arms are ropes. Float at the top." },
 ];
 
@@ -53,7 +53,7 @@ export function balanceCheck(sessions: Array<Session | null>): BalanceReport {
     perGroup[s.focus] = (perGroup[s.focus] ?? 0) + s.minutes;
   }
   const neglected = groups.filter((g) => !perGroup[g]);
-  let verdict = "Balanced week. Your future self says asante.";
+  let verdict = "Balanced week. Your future self says thank you.";
   if (neglected.includes("legs")) verdict = "No leg day?! The squats know what you did.";
   else if (neglected.length > 3) verdict = "That's a rest week, not a training week.";
   else if (neglected.length > 0) verdict = `Solid — but ${neglected.join(" & ")} got skipped.`;

@@ -21,7 +21,7 @@ const GROUPS = ["legs", "push", "pull", "core", "cardio", "mobility"] as const;
 
 function phase(count: number): string {
   if (count < 7) return "A fresh little start";
-  if (count < 13) return "Momentum week — kama simba.";
+  if (count < 13) return "Momentum week — build like a lion.";
   return "Finisher mode";
 }
 

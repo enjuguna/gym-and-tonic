@@ -37,7 +37,7 @@ describe("balanceCheck", () => {
     const mk = (id: string, focus: Session["focus"]): Session => ({ id, title: id, focus, intensity: "light", minutes: 30, exercises: [] });
     const r = balanceCheck(["legs", "push", "pull", "core", "cardio", "mobility"].map((g) => mk(g, g as Session["focus"])));
     expect(r.totalMinutes).toBe(180);
-    expect(r.verdict).toMatch(/balanced|asante/i);
+    expect(r.verdict).toMatch(/balanced|thank/i);
     expect(r.neglected.length).toBe(0);
   });
 
