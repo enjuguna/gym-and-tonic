@@ -5,7 +5,6 @@ import { usePlan, DAYS } from "./store";
 import { EXERCISES, balanceCheck, gearList, generateSession, exerciseById } from "./coach";
 import { overloadCheck } from "./history";
 import type { Session } from "./types";
-import { ensureWidget } from "./webmcpWidget";
 
 type Exec = (args: any) => unknown;
 
@@ -311,31 +310,6 @@ export async function registerAllTools(): Promise<WebMCPStatus> {
       }
     }
     return { supported: true, registered };
-  }
-
-  // Fallback: open-source widget bridge for any MCP client
-  try {
-    await ensureWidget();
-    const w = window.webmcp;
-    if (w?.registerTool) {
-      let registered = 0;
-      for (const spec of SPECS) {
-        try {
-          w.registerTool(
-            spec.name,
-            `${spec.title} — ${spec.description}`,
-            spec.inputSchema,
-            (args: unknown) => spec.execute(args),
-          );
-          registered++;
-        } catch (err) {
-          console.error(`[gym-and-tonic] widget registration failed for ${spec.name}`, err);
-        }
-      }
-      return { supported: true, registered, viaWidget: true };
-    }
-  } catch (err) {
-    console.warn("[gym-and-tonic] fallback widget unavailable", err);
   }
 
   return { supported: false, registered: 0 };
