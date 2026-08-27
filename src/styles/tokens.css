@@ -8,6 +8,8 @@
   --sage-deep: #31572c;
   --terra: #bc6c25;
   --line: #e6e1d4;
+  --surface: #ffffff;
+  --muted: #6f7068;
 }
 
 .font-display {
@@ -16,7 +18,20 @@
 
 body {
   font-family: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
 }
+
+.surface-card { border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); box-shadow: 0 8px 24px rgb(38 37 31 / 0.06); }
+.eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.18em; line-height: 1.2; text-transform: uppercase; }
+.button-primary { border-radius: 999px; background: var(--sage-deep); padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700; color: white; box-shadow: 0 4px 10px rgb(49 87 44 / 0.18); transition: transform .2s, background .2s; }
+.button-primary:hover { background: var(--sage); transform: translateY(-1px); }
+.button-secondary { border: 1px solid var(--line); border-radius: 999px; background: white; padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--sage-deep); transition: background .2s; }
+.button-secondary:hover { background: #f0f5ec; }
+.button-quiet { padding: 0.65rem 0.5rem; font-size: 0.75rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid rgb(79 119 45 / 0.35); outline-offset: 3px; }
 
 /* film grain — barely-there texture that kills the flat web-app look */
 .grain::before {

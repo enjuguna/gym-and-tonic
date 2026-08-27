@@ -4,9 +4,9 @@
 import { usePlan, DAYS } from "./store";
 import { EXERCISES, balanceCheck, gearList, generateSession, exerciseById } from "./coach";
 import { overloadCheck } from "./history";
-import type { Session } from "./types";
+import type { Session, Slot } from "./types";
 
-type Exec = (args: any) => unknown;
+type Exec = (args: unknown) => unknown;
 
 interface Spec {
   name: string;
@@ -18,8 +18,17 @@ interface Spec {
 
 const SPECS: Array<Spec & { execute: Exec }> = [];
 
-function tool(spec: Spec, execute: Exec): Spec & { execute: Exec } {
-  const registered = { ...spec, execute };
+function tool<T>(spec: Spec, execute: (args: T) => unknown): Spec & { execute: Exec } {
+  const registered = {
+    ...spec,
+    execute: (args: unknown) => {
+      try {
+        return execute(args as T);
+      } catch {
+        return { error: "Invalid tool arguments." };
+      }
+    },
+  };
   SPECS.push(registered);
   return registered;
 }
@@ -167,10 +176,9 @@ export const proposeSessionTool = tool(
     const existing = usePlan.getState().plan[slot];
     const session = generateSession(focus, intensity ?? "moderate");
     const id = usePlan.getState().applyProposal({
-      kind: "place",
       summary,
       toolSource: "propose_session",
-      payload: { slot, session },
+      payload: { kind: "place", slot: slot as Slot, session },
     });
     return {
       proposalId: id,
@@ -196,11 +204,9 @@ export const swapSessionsTool = tool(
     if (!plan[slotA]) return { error: `Slot ${slotA} is empty — use propose_session instead.` };
     if (!plan[slotB]) return { error: `Slot ${slotB} is empty — use propose_session instead.` };
     const id = usePlan.getState().applyProposal({
-      kind: "place",
       summary,
       toolSource: "swap_sessions",
-      // model a swap as two placements
-      payload: { slot: slotA, session: plan[slotB], alsoPlace: { slot: slotB, session: plan[slotA] } },
+      payload: { kind: "swap", slotA: slotA as Slot, slotB: slotB as Slot, sessionA: plan[slotA], sessionB: plan[slotB] },
     });
     return { proposalId: id, status: "pending-player-approval" };
   },
@@ -216,7 +222,7 @@ export const clearSlotTool = tool(
   },
   ({ slot, summary }: { slot: string; summary: string }) => {
     if (!usePlan.getState().plan[slot]) return { error: `Slot ${slot} is already empty.` };
-    const id = usePlan.getState().applyProposal({ kind: "clear", summary, toolSource: "clear_slot", payload: { slot } });
+    const id = usePlan.getState().applyProposal({ summary, toolSource: "clear_slot", payload: { kind: "clear", slot: slot as Slot, session: usePlan.getState().plan[slot] } });
     return { proposalId: id, status: "pending-player-approval" };
   },
 );
@@ -239,14 +245,13 @@ export const fillWeekTool = tool(
       (g, i, arr) => arr.indexOf(g) === i,
     );
     const fills = empty.map((slot, i) => ({
-      slot,
+      slot: slot as Slot,
       session: generateSession(neglectedFirst[i % neglectedFirst.length] as Session["focus"], "moderate"),
     }));
     const id = usePlan.getState().applyProposal({
-      kind: "fill-week",
       summary,
       toolSource: "fill_week",
-      payload: { fills },
+      payload: { kind: "fill-week", fills },
     });
     return {
       proposalId: id,

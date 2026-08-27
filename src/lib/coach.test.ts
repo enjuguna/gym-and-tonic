@@ -66,4 +66,10 @@ describe("generateSession", () => {
     expect(s.minutes).toBeGreaterThanOrEqual(20);
     expect(s.refuel).toBeTruthy();
   });
+
+  it("honours home and under-30 setup preferences when possible", () => {
+    const s = generateSession("legs", "light", { equipment: "home", duration: "under30" });
+    expect(s.minutes).toBeLessThanOrEqual(25);
+    expect(s.exercises.every((id) => exerciseById(id)?.equipment.length === 0)).toBe(true);
+  });
 });

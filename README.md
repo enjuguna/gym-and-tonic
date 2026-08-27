@@ -12,7 +12,7 @@ Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) · Septembe
 - Every write is a **staged proposal**: 🟢 new session, 🟡 swap, 🔴 callout ("No leg day?! The squats know what you did.").
 - You approve, reject, or drag things around yourself. The coach suggests; you decide.
 
-## The 9 site tools
+## The 11 site tools
 
 | Tool | Type | What it does |
 |---|---|---|
@@ -25,6 +25,8 @@ Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) · Septembe
 | `propose_session` | proposal | Stages a session into a slot for approval. |
 | `swap_sessions` | proposal | Proposes exchanging two slots' contents. |
 | `clear_slot` | proposal | Proposes resting that slot (rest is programming too). |
+| `fill_week` | proposal | Proposes filling empty weekday evening slots as one approval. |
+| `overload_report` | read-only | Compares this week with locally recorded history. |
 
 Registered via `document.modelContext.registerTool()`; all writes flow through one `applyProposal()` path so review UI and audit trail are automatic. The agent can never silently change your training week.
 
@@ -41,6 +43,8 @@ Astro · React island · Zustand · Tailwind · WebMCP · Web Audio · Vercel. N
 ```bash
 npm install
 npm run dev
+npm test
+npm run check
 ```
 
 Full experience: Chrome with WebMCP or the ChatGPT desktop app's built-in browser. Without an agent it works as a manual planner.

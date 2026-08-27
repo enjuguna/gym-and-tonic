@@ -1,4 +1,4 @@
-import type { Exercise, Session } from "./types";
+import type { Exercise, Session, SessionGenerationOptions } from "./types";
 
 export const EXERCISES: Exercise[] = [
   { id: "ex-squat", name: "Back squat", group: "legs", duration: 15, equipment: ["barbell", "rack"], cues: "Brace like the bar owes you money. Knees track toes." },
@@ -126,9 +126,17 @@ const lastTitlePerFocus = new Map<string, string>();
 export function generateSession(
   focus: Session["focus"],
   intensity: Session["intensity"] = "moderate",
+  options: SessionGenerationOptions = {},
 ): Session {
-  const pool = EXERCISES.filter((e) => e.group === focus);
-  const count = intensity === "brutal" ? 4 : intensity === "light" ? 2 : 3;
+  const equipmentPool = options.equipment === "home"
+    ? EXERCISES.filter((e) => e.group === focus && e.equipment.length === 0)
+    : EXERCISES.filter((e) => e.group === focus);
+  const pool = options.equipment === "home" && equipmentPool.length > 0 ? equipmentPool : EXERCISES.filter((e) => e.group === focus);
+  const count = options.duration === "under30"
+    ? 2
+    : options.duration === "45plus" || intensity === "brutal"
+      ? 4
+      : intensity === "light" ? 2 : 3;
   const picked = pool.slice(0, Math.min(pool.length, count));
   const minutes = Math.max(20, picked.reduce((t, e) => t + e.duration, 0));
 

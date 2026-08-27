@@ -27,7 +27,7 @@ export function DayStory({
   }, [onClose]);
 
   return (
-    <section className="animate-rise mb-8 overflow-hidden rounded-3xl border border-[#e6e1d4] bg-white shadow-xl ring-4 ring-[#31572c]/[0.06]">
+    <section className="animate-rise mb-8 overflow-hidden rounded-3xl border border-[#e6e1d4] bg-white shadow-xl ring-4 ring-[#31572c]/[0.06]" aria-labelledby="session-story-heading">
       {/* spread label — clarifies this is a story panel, not a modal */}
       <div className="flex items-center justify-between border-b border-[#e6e1d4] px-6 py-2.5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
@@ -47,7 +47,7 @@ export function DayStory({
             {DAYS[Number(d)]} · {when === "am" ? "Morning" : "Evening"} ·{" "}
             <span className="rounded bg-white/15 px-1.5 py-0.5 backdrop-blur-sm">{session.intensity}</span>
           </p>
-          <h2 className="mt-1 font-serif text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">
+          <h2 id="session-story-heading" className="mt-1 font-serif text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">
             {session.title}
           </h2>
         </div>

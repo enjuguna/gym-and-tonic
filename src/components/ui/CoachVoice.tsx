@@ -12,6 +12,7 @@ export function CoachVoice({ mcpConnected }: { mcpConnected: boolean }) {
   const queue = useRef<string[]>([]);
   const typing = useRef(false);
   const announcedConnection = useRef(false);
+  const lastActivityId = useRef<number | null>(null);
 
   // external components can enqueue lines via a custom event
   useEffect(() => {
@@ -36,8 +37,8 @@ export function CoachVoice({ mcpConnected }: { mcpConnected: boolean }) {
   useEffect(() => {
     const last = activityLog[activityLog.length - 1];
     if (!last) return;
-    if (last.id === (enqueue as any).lastId) return;
-    (enqueue as any).lastId = last.id;
+    if (last.id === lastActivityId.current) return;
+    lastActivityId.current = last.id;
     enqueue(coachLine(last));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activityLog]);
@@ -79,6 +80,8 @@ export function CoachVoice({ mcpConnected }: { mcpConnected: boolean }) {
     <div
       className={`fixed bottom-5 left-5 z-40 max-w-xs rounded-2xl border border-[#e6e1d4] bg-white/95 p-4 shadow-xl backdrop-blur transition-opacity duration-700 ${fading ? "opacity-0" : "opacity-100"}`}
       role="status"
+      aria-live="polite"
+      aria-label="Coach message"
     >
       <div className="flex items-start gap-2.5">
         <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white">

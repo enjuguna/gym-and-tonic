@@ -9,6 +9,20 @@ export type MuscleGroup =
   | "mobility";
 
 export type Intensity = "light" | "moderate" | "brutal";
+export type WorkoutDuration = "under30" | "30to45" | "45plus";
+export type EquipmentPreference = "home" | "gym";
+
+export interface SetupPreferences {
+  duration: WorkoutDuration;
+  equipment: EquipmentPreference;
+  intensity: Intensity;
+}
+
+export interface SessionGenerationOptions extends Partial<SetupPreferences> {}
+
+export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type Meal = "am" | "pm";
+export type Slot = `${DayIndex}-${Meal}`;
 
 export interface Exercise {
   id: string;
@@ -18,11 +32,6 @@ export interface Exercise {
   duration: number;
   equipment: string[];
   cues: string;
-}
-
-export interface Slot {
-  day: number; // 0=Mon .. 6=Sun
-  meal: "am" | "pm"; // morning / evening session
 }
 
 export interface Session {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   onConnected: () => void;
@@ -6,6 +6,16 @@ interface Props {
 
 export function ConnectModal({ onConnected }: Props) {
   const [copied, setCopied] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onConnected();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onConnected]);
 
   const mcpConfig = `{
   "mcpServers": {
@@ -17,15 +27,19 @@ export function ConnectModal({ onConnected }: Props) {
 }`;
 
   const copy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onConnected}>
-      <div className="max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="font-serif text-2xl">Bring your coach online</h3>
+      <div className="max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="connect-heading">
+        <h3 id="connect-heading" ref={headingRef} tabIndex={-1} className="font-serif text-2xl">Bring your coach online</h3>
         <p className="mt-2 text-sm text-stone-600">
           Gym & Tonic exposes its whole week as tools. You just need an MCP client to call them.
         </p>

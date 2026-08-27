@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { usePlan } from "../../lib/store";
 import { balanceCheck } from "../../lib/coach";
-import { loadHistory, overloadCheck, currentWeekKey } from "../../lib/history";
+import { loadHistory, overloadCheck } from "../../lib/history";
 
 /** Analytics panel: volume per group + week-over-week overload insights. */
 export function Insights() {
@@ -16,9 +16,8 @@ export function Insights() {
   return (
     <section className="mt-10 grid gap-4 lg:grid-cols-2">
       {/* volume per group */}
-      <div className="rounded-2xl border border-[#e6e1d4] bg-white p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">This week's load</p>
-        <h3 className="mt-0.5 font-serif text-xl">Minutes by muscle group.</h3>
+      <details open className="surface-card group p-5">
+        <summary className="cursor-pointer list-none pr-6 marker:hidden"><p className="eyebrow text-stone-400">This week's load <span className="float-right text-xs text-stone-400 group-open:hidden">Show +</span></p><h3 className="mt-0.5 font-serif text-xl">Minutes by muscle group.</h3></summary>
         <div className="mt-4 space-y-2.5">
           {Object.entries(balance.perGroup).length === 0 && (
             <p className="text-sm text-stone-400">Nothing planned yet — the chart is waiting.</p>
@@ -40,11 +39,12 @@ export function Insights() {
               </div>
             ))}
         </div>
-      </div>
+      </details>
 
       {/* overload insights */}
-      <div className="rounded-2xl border border-[#e6e1d4] bg-white p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+      <details open className="surface-card group p-5">
+        <summary className="cursor-pointer list-none pr-6 marker:hidden"><p className="eyebrow text-stone-400">Week over week <span className="float-right text-xs text-stone-400 group-open:hidden">Show +</span></p><h3 className="mt-0.5 font-serif text-xl">{overload.headline}</h3></summary>
+        <p className="mt-1 text-[11px] text-stone-400">
           Week over week
           {history.length >= 2 && (
             <span className="ml-2 rounded bg-stone-100 px-1.5 py-0.5 normal-case text-stone-400">
@@ -52,7 +52,6 @@ export function Insights() {
             </span>
           )}
         </p>
-        <h3 className="mt-0.5 font-serif text-xl">{overload.headline}</h3>
         {overload.insights.length === 0 ? (
           <p className="mt-3 text-sm text-stone-400">
             Complete this week and it gets archived automatically — next week the coach can compare against it.
@@ -79,7 +78,7 @@ export function Insights() {
             })}
           </ul>
         )}
-      </div>
+      </details>
     </section>
   );
 }
