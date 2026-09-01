@@ -1,12 +1,17 @@
 // Phase 2: training history, progressive overload, PR tracking.
 // History persists per week-key in localStorage via the store.
 
-import type { Session } from "./types";
+import type { CompletionMap, MuscleGroup, Session, Slot } from "./types";
 
 export interface WeekRecord {
   weekKey: string; // e.g. "2026-W35"
   sessions: Session[];
   completedAt: number;
+  completions?: CompletionMap;
+  completedMinutes?: number;
+  plannedMinutes?: number;
+  completedCount?: number;
+  archivedAt?: number;
 }
 
 export interface OverloadInsight {
@@ -27,13 +32,77 @@ export function loadHistory(): WeekRecord[] {
   }
 }
 
-export function saveWeek(weekKey: string, sessions: Session[]) {
+export function saveWeek(weekKey: string, sessions: Session[], completions: CompletionMap = {}, completedMinutes?: number) {
   if (!sessions.length) return;
   const hist = loadHistory().filter((w) => w.weekKey !== weekKey);
-  hist.push({ weekKey, sessions, completedAt: Date.now() });
+  hist.push({ weekKey, sessions, completions, completedMinutes, plannedMinutes: sessions.reduce((total, session) => total + session.minutes, 0), completedCount: Object.keys(completions).length, archivedAt: Date.now(), completedAt: Date.now() });
   try {
     localStorage.setItem(KEY, JSON.stringify(hist.slice(-12))); // keep 12 weeks
   } catch { /* private mode */ }
+}
+
+export interface ProgressReport {
+  plannedCount: number;
+  completedCount: number;
+  plannedMinutes: number;
+  completedMinutes: number;
+  consistencyPct: number;
+  currentStreak: number;
+  bestWeek: { weekKey: string; completedCount: number } | null;
+  totalCompletedSessions: number;
+  completedGroups: MuscleGroup[];
+  guidance: string;
+}
+
+export function progressReport(
+  plan: Record<string, Session>,
+  completions: CompletionMap,
+  history: WeekRecord[] = [],
+): ProgressReport {
+  const entries = Object.entries(plan);
+  const completedEntries = entries.filter(([slot]) => !!completions[slot as Slot]);
+  const plannedMinutes = entries.reduce((total, [, session]) => total + session.minutes, 0);
+  const completedMinutes = completedEntries.reduce((total, [, session]) => total + session.minutes, 0);
+  const orderedCompleted = completedEntries
+    .map(([slot]) => Number(slot.split("-")[0]) * 2 + (slot.endsWith("pm") ? 1 : 0))
+    .sort((a, b) => a - b);
+  let currentStreak = orderedCompleted.length ? 1 : 0;
+  for (let i = orderedCompleted.length - 1; i > 0 && orderedCompleted[i] === orderedCompleted[i - 1] + 1; i--) currentStreak++;
+  const completedGroups = [...new Set(completedEntries.map(([, session]) => session.focus))] as MuscleGroup[];
+  const historicalCompleted = history.reduce((total, week) => total + Object.keys(week.completions ?? {}).length, 0);
+  const historicalBest = history.reduce<ProgressReport["bestWeek"]>((best, week) => {
+    const count = Object.keys(week.completions ?? {}).length;
+    return !best || count > best.completedCount ? { weekKey: week.weekKey, completedCount: count } : best;
+  }, null);
+  const bestWeek = completedEntries.length > (historicalBest?.completedCount ?? 0)
+    ? { weekKey: "current", completedCount: completedEntries.length }
+    : historicalBest;
+  const completionPct = entries.length ? Math.round((completedEntries.length / entries.length) * 100) : 0;
+  let guidance = "Choose one session to complete today. Small wins make the week.";
+  if (completionPct >= 80) guidance = "Your consistency is doing the heavy lifting. Keep the rhythm kind and steady.";
+  else if (completionPct >= 50) guidance = "More than halfway there. Protect the next session before adding more volume.";
+  else if (completedEntries.length > 0) guidance = "A real start is on the board. One more completed session builds momentum.";
+  return {
+    plannedCount: entries.length,
+    completedCount: completedEntries.length,
+    plannedMinutes,
+    completedMinutes,
+    consistencyPct: completionPct,
+    currentStreak,
+    bestWeek,
+    totalCompletedSessions: historicalCompleted + completedEntries.length,
+    completedGroups,
+    guidance,
+  };
+}
+
+export function adaptiveGuidance(plan: Record<string, Session>, completions: CompletionMap): string {
+  const completed = Object.entries(completions).filter(([slot]) => !!plan[slot]);
+  const notes = completed.map(([, entry]) => entry.note?.toLowerCase() ?? "").join(" ");
+  const averageEffort = completed.reduce((sum, [, entry]) => sum + (entry.effort ?? 3), 0) / Math.max(1, completed.length);
+  if (/too much|sore|exhausted|hard/.test(notes) || averageEffort >= 4.5) return "The work is landing hard. Keep the next week steady and leave room for recovery.";
+  if (completed.length >= 3) return "Your rhythm is taking shape. Repeat the sessions that felt good before adding more.";
+  return "Start with consistency. A few completed sessions give your next plan better information.";
 }
 
 export function currentWeekKey(date = new Date()): string {

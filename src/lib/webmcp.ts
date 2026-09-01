@@ -1,9 +1,12 @@
-// Gym & Tonic WebMCP layer — 9 coach tools.
+// Gym & Tonic WebMCP layer — 15 coach tools.
 // Read tools inspect the week; write tools stage proposals for approval.
 
 import { usePlan, DAYS } from "./store";
 import { EXERCISES, balanceCheck, gearList, generateSession, exerciseById } from "./coach";
-import { overloadCheck } from "./history";
+import { adaptiveGuidance, loadHistory, overloadCheck, progressReport } from "./history";
+import { refuelIdsFromSessions } from "./kenyanFlavor";
+import { loadTemplates } from "./templates";
+import { planToICS } from "./calendar";
 import type { Session, Slot } from "./types";
 
 type Exec = (args: unknown) => unknown;
@@ -52,7 +55,7 @@ export const getWeekPlanTool = tool(
     readOnly: true,
   },
   () => {
-    const { plan, preferences } = usePlan.getState();
+    const { plan, preferences, completions } = usePlan.getState();
     const slots = Object.entries(plan).map(([slot, s]) => ({
       slot,
       day: DAYS[Number(slot.split("-")[0])],
@@ -61,6 +64,8 @@ export const getWeekPlanTool = tool(
       focus: s.focus,
       intensity: s.intensity,
       minutes: s.minutes,
+      completed: !!completions[slot as Slot],
+      completion: completions[slot as Slot],
     }));
     return { plannedCount: slots.length, ofTotal: 14, emptySlots: 14 - slots.length, preferences, slots };
   },
@@ -147,7 +152,7 @@ export const suggestSessionTool = tool(
     readOnly: true,
   },
   ({ focus, intensity }: { focus: Session["focus"]; intensity?: Session["intensity"] }) =>
-    generateSession(focus, intensity ?? "moderate"),
+    generateSession(focus, intensity ?? "moderate", { excludeRefuelIds: refuelIdsFromSessions(Object.values(usePlan.getState().plan)) }),
 );
 
 // ── proposal tools ────────────────────────────────────────────────────────
@@ -174,7 +179,7 @@ export const proposeSessionTool = tool(
     const [d] = slot.split("-");
     if (Number(d) > 6 || !slot.endsWith("am") && !slot.endsWith("pm")) return { error: `Slot '${slot}' invalid. Format '0-am'..'6-pm'.` };
     const existing = usePlan.getState().plan[slot];
-    const session = generateSession(focus, intensity ?? "moderate");
+    const session = generateSession(focus, intensity ?? "moderate", { excludeRefuelIds: refuelIdsFromSessions(Object.values(usePlan.getState().plan)) });
     const id = usePlan.getState().applyProposal({
       summary,
       toolSource: "propose_session",
@@ -184,7 +189,7 @@ export const proposeSessionTool = tool(
       proposalId: id,
       status: "pending-player-approval",
       replacingExisting: !!existing,
-      session: { title: session.title, minutes: session.minutes, exercises: session.exercises.map((e) => exerciseById(e)?.name), refuel: session.refuel },
+      session: { title: session.title, minutes: session.minutes, exercises: session.exercises.map((e) => exerciseById(e)?.name), refuel: session.refuel, refuelDetail: session.refuelDetail },
     };
   },
 );
@@ -244,10 +249,12 @@ export const fillWeekTool = tool(
     const neglectedFirst = [...r.neglected, ...FOCUS].filter(
       (g, i, arr) => arr.indexOf(g) === i,
     );
-    const fills = empty.map((slot, i) => ({
-      slot: slot as Slot,
-      session: generateSession(neglectedFirst[i % neglectedFirst.length] as Session["focus"], "moderate"),
-    }));
+    const usedRefuelIds = refuelIdsFromSessions(Object.values(plan));
+    const fills = empty.map((slot, i) => {
+      const session = generateSession(neglectedFirst[i % neglectedFirst.length] as Session["focus"], "moderate", { excludeRefuelIds: usedRefuelIds });
+      if (session.refuelDetail) usedRefuelIds.push(session.refuelDetail.id);
+      return { slot: slot as Slot, session };
+    });
     const id = usePlan.getState().applyProposal({
       summary,
       toolSource: "fill_week",
@@ -283,6 +290,61 @@ export const overloadReportTool = tool(
   },
 );
 
+export const getProgressTool = tool(
+  {
+    name: "get_progress",
+    title: "Get training progress",
+    description: "Returns planned versus completed sessions and minutes, consistency, streak, covered groups, and lightweight guidance.",
+    inputSchema: obj({}),
+    readOnly: true,
+  },
+  () => {
+    const { plan, completions } = usePlan.getState();
+    const report = progressReport(plan, completions, loadHistory());
+    return { ...report, guidance: `${report.guidance} ${adaptiveGuidance(plan, completions)}` };
+  },
+);
+
+export const getTrainingHistoryTool = tool(
+  {
+    name: "get_training_history",
+    title: "Get completed training history",
+    description: "Returns locally stored weekly training history, including planned sessions, completed sessions, minutes, and reflections.",
+    inputSchema: obj({}),
+    readOnly: true,
+  },
+  () => {
+    const history = loadHistory();
+    return { weeksTracked: history.length, weeks: history.map((week) => ({ ...week, completedCount: Object.keys(week.completions ?? {}).length })) };
+  },
+);
+
+export const listTemplatesTool = tool(
+  {
+    name: "list_templates",
+    title: "List saved week templates",
+    description: "Returns the locally saved weekly rhythms available to the player. Templates are never applied by an agent.",
+    inputSchema: obj({}),
+    readOnly: true,
+  },
+  () => ({ templates: loadTemplates().map((template) => ({ id: template.id, name: template.name, sessionCount: Object.keys(template.plan).length, createdAt: template.createdAt })) }),
+);
+
+export const getCalendarPlanTool = tool(
+  {
+    name: "get_calendar_plan",
+    title: "Prepare calendar plan",
+    description: "Returns the current planned sessions as calendar-ready event details and an iCalendar export string. It does not create or send calendar events.",
+    inputSchema: obj({}),
+    readOnly: true,
+  },
+  () => {
+    const plan = usePlan.getState().plan;
+    const events = Object.entries(plan).map(([slot, session]) => ({ slot, title: session.title, focus: session.focus, intensity: session.intensity, minutes: session.minutes }));
+    return { eventCount: events.length, events, ics: planToICS(plan) };
+  },
+);
+
 // ── registration ─────────────────────────────────────────────────────────
 
 export interface WebMCPStatus {
@@ -296,8 +358,18 @@ export async function registerAllTools(): Promise<WebMCPStatus> {
   ).modelContext;
   if (!mc?.registerTool) return { supported: false, registered: 0 };
 
+  // Astro/Vite can remount this island during local edits. Keep successful
+  // registrations on the document so an HMR pass does not try to add the
+  // same WebMCP name a second time.
+  const registryDocument = document as Document & { __gtRegisteredTools?: Set<string> };
+  const registeredNames = registryDocument.__gtRegisteredTools ?? new Set<string>();
+  registryDocument.__gtRegisteredTools = registeredNames;
   let registered = 0;
   for (const spec of SPECS) {
+    if (registeredNames.has(spec.name)) {
+      registered++;
+      continue;
+    }
     try {
       await mc.registerTool({
         name: spec.name,
@@ -307,6 +379,7 @@ export async function registerAllTools(): Promise<WebMCPStatus> {
         annotations: spec.readOnly ? { readOnlyHint: true } : {},
         execute: (args: unknown) => spec.execute(args),
       });
+      registeredNames.add(spec.name);
       registered++;
     } catch (err) {
       console.error(`[gym-and-tonic] failed to register ${spec.name}`, err);

@@ -1,4 +1,5 @@
 import type { Exercise, Session, SessionGenerationOptions } from "./types";
+import { selectRefuel } from "./kenyanFlavor";
 
 export const EXERCISES: Exercise[] = [
   { id: "ex-squat", name: "Back squat", group: "legs", duration: 15, equipment: ["barbell", "rack"], cues: "Brace like the bar owes you money. Knees track toes." },
@@ -59,15 +60,6 @@ export function balanceCheck(sessions: Array<Session | null>): BalanceReport {
   else if (neglected.length > 0) verdict = `Solid — but ${neglected.join(" & ")} got skipped.`;
   return { totalMinutes: total, perGroup, neglected, verdict };
 }
-
-const REFUELS = [
-  "Ugali na ndengu stew",
-  "Sukuma wiki & chapati roll",
-  "Mukimo (small sin, big recovery)",
-  "Githeri bowl, extra beans",
-  "Chai ya tangawizi + peanut toast",
-  "Nyama choma — leg day currency",
-];
 
 // Descriptive Kenyan-rooted titles per focus.
 const TITLES: Record<string, string[]> = {
@@ -145,6 +137,7 @@ export function generateSession(
   const candidates = titles.filter((t) => t !== lastUsed);
   const title = candidates[Math.floor(Math.random() * candidates.length)];
   lastTitlePerFocus.set(focus, title);
+  const refuelDetail = selectRefuel(options.excludeRefuelIds);
 
   return {
     id: nextId(),
@@ -153,7 +146,8 @@ export function generateSession(
     intensity,
     minutes,
     exercises: picked.map((e) => e.id),
-    refuel: REFUELS[Math.floor(Math.random() * REFUELS.length)],
+    refuel: refuelDetail.title,
+    refuelDetail,
     note:
       intensity === "brutal"
         ? "Hydrate the day before, not just the hour before."

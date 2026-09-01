@@ -1,5 +1,5 @@
 import { usePlan } from "../../lib/store";
-import type { EquipmentPreference, Intensity, WorkoutDuration } from "../../lib/types";
+import type { DayIndex, EquipmentPreference, Intensity, WorkoutDuration } from "../../lib/types";
 
 interface Props {
   onStart: () => void;
@@ -16,6 +16,8 @@ export function SetupPanel({ onStart, onFillWeek, onAskCoach }: Props) {
   const preferences = usePlan((s) => s.preferences);
   const setPreference = usePlan((s) => s.setPreference);
   const dismissSetup = usePlan((s) => s.dismissSetup);
+  const trainingDays = preferences.trainingDays ?? ([0, 1, 2, 3, 4] as DayIndex[]);
+  const restDays = preferences.restDays ?? ([] as DayIndex[]);
 
   return (
     <section className="surface-card mb-8 overflow-hidden" aria-labelledby="setup-heading">
@@ -46,6 +48,20 @@ export function SetupPanel({ onStart, onFillWeek, onAskCoach }: Props) {
             {([ ["light", "Easy does it"], ["moderate", "Proper work"], ["brutal", "Bring it"] ] as const).map(([value, label]) => (
               <button key={value} onClick={() => setPreference("intensity", value)} aria-pressed={preferences.intensity === value} className={choiceClass(preferences.intensity === value)}>{label}</button>
             ))}
+          </ChoiceGroup>
+          <ChoiceGroup label="Usual training days">
+            <div className="col-span-full flex flex-wrap gap-1.5">
+              {([0, 1, 2, 3, 4, 5, 6] as DayIndex[]).map((day) => {
+                const selected = trainingDays.includes(day);
+                return <button key={day} onClick={() => setPreference("trainingDays", selected && trainingDays.length > 1 ? trainingDays.filter((value) => value !== day) : selected ? trainingDays : [...trainingDays, day].sort())} aria-pressed={selected} className={`rounded-lg border px-2 py-1.5 text-[11px] font-semibold ${selected ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-stone-200 text-stone-400 hover:border-emerald-600/40"}`}>{["M", "T", "W", "T", "F", "S", "S"][day]}</button>;
+              })}
+            </div>
+          </ChoiceGroup>
+          <ChoiceGroup label="Rest rhythm">
+            <div className="col-span-full flex flex-wrap gap-1.5">
+              <button onClick={() => { setPreference("restDays", [5, 6]); setPreference("trainingDays", trainingDays.filter((day) => day < 5)); }} aria-pressed={restDays.length === 2 && restDays.includes(5) && restDays.includes(6)} className={`rounded-lg border px-2 py-1.5 text-[11px] font-semibold ${restDays.length === 2 ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-stone-200 text-stone-400 hover:border-emerald-600/40"}`}>Weekend rest</button>
+              <button onClick={() => setPreference("restDays", [])} aria-pressed={!restDays.length} className={`rounded-lg border px-2 py-1.5 text-[11px] font-semibold ${!restDays.length ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-stone-200 text-stone-400 hover:border-emerald-600/40"}`}>Keep it flexible</button>
+            </div>
           </ChoiceGroup>
         </div>
       </div>

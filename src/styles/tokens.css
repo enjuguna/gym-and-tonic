@@ -10,6 +10,14 @@
   --line: #e6e1d4;
   --surface: #ffffff;
   --muted: #6f7068;
+  --surface-subtle: #f0f1e9;
+  --success: #31572c;
+  --warning: #b45309;
+  --danger: #b42318;
+  --focus-ring: rgb(79 119 45 / 0.5);
+  --shadow-soft: 0 8px 24px rgb(38 37 31 / 0.06);
+  --shadow-strong: 0 20px 50px rgb(38 37 31 / 0.16);
+  --radius-card: 1rem;
 }
 
 .font-display {
@@ -22,7 +30,7 @@ body {
   color: var(--ink);
 }
 
-.surface-card { border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); box-shadow: 0 8px 24px rgb(38 37 31 / 0.06); }
+.surface-card { border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-soft); }
 .eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.18em; line-height: 1.2; text-transform: uppercase; }
 .button-primary { border-radius: 999px; background: var(--sage-deep); padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700; color: white; box-shadow: 0 4px 10px rgb(49 87 44 / 0.18); transition: transform .2s, background .2s; }
 .button-primary:hover { background: var(--sage); transform: translateY(-1px); }
@@ -31,7 +39,7 @@ body {
 .button-quiet { padding: 0.65rem 0.5rem; font-size: 0.75rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 
 button, a, summary { -webkit-tap-highlight-color: transparent; }
-button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid rgb(79 119 45 / 0.35); outline-offset: 3px; }
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 
 /* film grain — barely-there texture that kills the flat web-app look */
 .grain::before {

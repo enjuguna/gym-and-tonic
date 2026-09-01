@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePlan, DAYS } from "../lib/store";
-import type { Slot } from "../lib/store";
 import { registerAllTools } from "../lib/webmcp";
 import { balanceCheck, gearList, generateSession } from "../lib/coach";
 import { SceneImage } from "./ui/SceneImage";
@@ -9,31 +8,21 @@ import { CoachVoice } from "./ui/CoachVoice";
 import { Insights } from "./ui/Insights";
 import { ConnectModal } from "./ui/ConnectModal";
 import { SetupPanel } from "./ui/SetupPanel";
-import { GHOST_COPY_KENYA, greetingEat, REFUEL_SPOTLIGHTS } from "../lib/kenyanFlavor";
+import { ProgressDashboard } from "./ui/ProgressDashboard";
+import { ReflectionPanel } from "./ui/ReflectionPanel";
+import { WorkoutMode } from "./ui/WorkoutMode";
+import { DataControls } from "./ui/DataControls";
+import { ConnectionStatus } from "./ui/ConnectionStatus";
+import { PlanningTools } from "./ui/PlanningTools";
+import { GHOST_COPY_KENYA, greetingEat, REFUEL_CATALOG, refuelIdsFromSessions } from "../lib/kenyanFlavor";
 import { saveWeek, currentWeekKey } from "../lib/history";
-import type { SessionGenerationOptions } from "../lib/types";
+import type { SessionGenerationOptions, Slot } from "../lib/types";
 import { sound } from "../lib/sound";
+import { FOCUS_META, GROUPS, weekPhase } from "../lib/plannerMeta";
 
 /** Ask the coach voice to say something. */
 function enqueueCoachLine(text: string) {
   window.dispatchEvent(new CustomEvent("gt-coach-say", { detail: text }));
-}
-
-const FOCUS_META: Record<string, { icon: string; chip: string }> = {
-  legs: { icon: "🦵", chip: "bg-orange-100 text-orange-800" },
-  push: { icon: "💪", chip: "bg-sky-100 text-sky-800" },
-  pull: { icon: "🪢", chip: "bg-violet-100 text-violet-800" },
-  core: { icon: "🎯", chip: "bg-lime-100 text-lime-800" },
-  cardio: { icon: "❤️", chip: "bg-rose-100 text-rose-800" },
-  mobility: { icon: "🧘", chip: "bg-teal-100 text-teal-800" },
-};
-
-const GROUPS = ["legs", "push", "pull", "core", "cardio", "mobility"] as const;
-
-function phase(count: number): string {
-  if (count < 7) return "A fresh little start";
-  if (count < 13) return "Momentum week — build like a lion.";
-  return "Finisher mode";
 }
 
 export default function Planner() {
@@ -46,6 +35,14 @@ export default function Planner() {
   const reject = usePlan((s) => s.rejectProposal);
   const clearSlot = usePlan((s) => s.clearSlot);
   const placeSession = usePlan((s) => s.placeSession);
+  const completions = usePlan((s) => s.completions);
+  const completeSession = usePlan((s) => s.completeSession);
+  const uncompleteSession = usePlan((s) => s.uncompleteSession);
+  const updateCompletion = usePlan((s) => s.updateCompletion);
+  const startNextWeek = usePlan((s) => s.startNextWeek);
+  const reviewWeek = usePlan((s) => s.reviewWeek);
+  const activeWorkout = usePlan((s) => s.activeWorkout);
+  const startWorkout = usePlan((s) => s.startWorkout);
   const [mcpStatus, setMcpStatus] = useState<import("../lib/webmcp").WebMCPStatus | null>(null);
   const [slotMenu, setSlotMenu] = useState<Slot | null>(null);
   const [storySlot, setStorySlot] = useState<Slot | null>(null);
@@ -53,6 +50,9 @@ export default function Planner() {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const setupRef = useRef<HTMLDivElement>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [reflectionSlot, setReflectionSlot] = useState<Slot | null>(null);
+  const [showCompletedOnly, setShowCompletedOnly] = useState(false);
+  const [workoutOpen, setWorkoutOpen] = useState(false);
 
   useEffect(() => {
     registerAllTools().then(setMcpStatus).catch(console.error);
@@ -61,6 +61,7 @@ export default function Planner() {
 
   const pending = proposals.filter((p) => p.state === "pending");
   const sessions = useMemo(() => Object.values(plan), [plan]);
+  const usedRefuelIds = useMemo(() => refuelIdsFromSessions(sessions), [sessions]);
   const balance = useMemo(() => balanceCheck(sessions), [sessions]);
   const gear = useMemo(() => Object.entries(gearList(sessions)), [sessions]);
   const plannedCount = sessions.length;
@@ -71,28 +72,39 @@ export default function Planner() {
       stampedRef.current = true;
       sound.sting(true);
       // archive this week so next week's overload report has history
-      saveWeek(currentWeekKey(), sessions);
+      const completedMinutes = Object.entries(plan).reduce((total, [slot, session]) => total + (completions[slot as Slot] ? session.minutes : 0), 0);
+      saveWeek(currentWeekKey(), sessions, completions, completedMinutes);
     }
     if (!complete) stampedRef.current = false;
-  }, [complete, sessions]);
+  }, [complete, sessions, completions]);
 
   const storySession = storySlot ? plan[storySlot] : null;
   const greeting = useMemo(() => greetingEat(new Date().getUTCHours() + 3), []);
   const coveredGroups = useMemo(() => new Set(sessions.map((s) => s.focus)), [sessions]);
-  const spotlight = useMemo(() => REFUEL_SPOTLIGHTS[plannedCount % REFUEL_SPOTLIGHTS.length], [plannedCount]);
+  const spotlight = useMemo(() => {
+    const usedDetails = sessions.flatMap((session) => session.refuelDetail ? [session.refuelDetail] : []);
+    return usedDetails[plannedCount % Math.max(1, usedDetails.length)] ?? REFUEL_CATALOG[plannedCount % REFUEL_CATALOG.length];
+  }, [plannedCount, sessions]);
   const showSetup = hydrated && !setupDismissed && !complete && (!hasStarted || plannedCount < 2);
-  const generationOptions: SessionGenerationOptions = useMemo(() => ({ duration: preferences.duration, equipment: preferences.equipment }), [preferences.duration, preferences.equipment]);
+  const preferredDays = (preferences.trainingDays ?? ([0, 1, 2, 3, 4] as const)).filter((day) => !(preferences.restDays ?? []).includes(day));
+  const generationOptions: SessionGenerationOptions = useMemo(() => ({ duration: preferences.duration, equipment: preferences.equipment, excludeRefuelIds: usedRefuelIds }), [preferences.duration, preferences.equipment, usedRefuelIds]);
 
   const startFirstSession = () => {
     const focus = balance.neglected[0] as Parameters<typeof generateSession>[0] ?? "legs";
-    placeSession("0-pm", generateSession(focus, preferences.intensity, generationOptions));
+    const firstDay = preferredDays[0] ?? 0;
+    placeSession(`${firstDay}-pm`, generateSession(focus, preferences.intensity, generationOptions));
   };
 
   const fillWeekManually = () => {
     const focusOrder = (balance.neglected.length ? balance.neglected : GROUPS) as Parameters<typeof generateSession>[0][];
-    [0, 1, 2, 3, 4].forEach((day, index) => {
+    const used = [...usedRefuelIds];
+    preferredDays.forEach((day, index) => {
       const slot = `${day}-pm` as Slot;
-      if (!plan[slot]) placeSession(slot, generateSession(focusOrder[index % focusOrder.length], preferences.intensity, generationOptions));
+      if (!plan[slot]) {
+        const session = generateSession(focusOrder[index % focusOrder.length], preferences.intensity, { ...generationOptions, excludeRefuelIds: used });
+        if (session.refuelDetail) used.push(session.refuelDetail.id);
+        placeSession(slot, session);
+      }
     });
   };
 
@@ -101,17 +113,35 @@ export default function Planner() {
     else setShowConnectModal(true);
   };
 
+  const todayDay = ((new Date().getDay() + 6) % 7) as number;
+  const todayWhen = new Date().getHours() < 15 ? "am" : "pm";
+  const todaySlot = `${todayDay}-${todayWhen}` as Slot;
+  const todaySession = plan[todaySlot];
+  const activeWorkoutIsToday = activeWorkout?.slot === todaySlot;
+  const openWorkout = (slot: Slot) => {
+    if (startWorkout(slot) || activeWorkout?.slot === slot) setWorkoutOpen(true);
+    else if (activeWorkout) setWorkoutOpen(true);
+  };
+
+  // The saved plan exists only in the browser. Render a stable shell first so
+  // Astro's server markup never races localStorage during React hydration.
+  if (!hydrated) {
+    return <div className="min-h-screen bg-[#f7f5ef]" aria-busy="true" aria-label="Loading your training board" />;
+  }
+
   return (
     <div className={`grain min-h-screen bg-[#f7f5ef] text-[#26251f] transition-opacity duration-200 ${hydrated ? "opacity-100" : "opacity-0"}`}>
       {/* header */}
       <header className="sticky top-0 z-30 border-b border-[#e6e1d4] bg-[#f7f5ef]/90 backdrop-blur">
+        <ConnectionStatus />
         <div className="mx-auto flex max-w-6xl items-center gap-x-5 px-5 py-3">
-          <h1 className="font-serif text-lg font-semibold tracking-tight">
+          <a href="/" aria-label="Gym and Tonic home" className="font-serif text-lg font-semibold tracking-tight">
             gym<span className="text-emerald-700">&amp;</span>tonic
-          </h1>
+          </a>
           <span className="hidden text-sm italic text-stone-400 sm:inline">a little less “should I train today?”</span>
           <div className="ml-auto flex items-center gap-2">
-            <a href="/tools" className="hidden rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 hover:bg-white hover:text-emerald-800 sm:inline">How it works</a>
+            <a href="/tools" className="hidden rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 hover:bg-white hover:text-emerald-800 lg:inline">Coach tools</a>
+            <DataControls />
             {mcpStatus && !mcpStatus.supported && (
               <button
                 onClick={() => setShowConnectModal(true)}
@@ -140,7 +170,7 @@ export default function Planner() {
           <SceneImage scene="hero-week" kenburns className="h-56 sm:h-64">
             <div className="flex h-full flex-col justify-end bg-gradient-to-t from-black/70 via-black/25 to-black/40 p-7 text-white">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] drop-shadow-md">
-                <span className="rounded bg-black/35 px-2 py-0.5 backdrop-blur-sm">{phase(plannedCount)}</span>
+                <span className="rounded bg-black/35 px-2 py-0.5 backdrop-blur-sm">{weekPhase(plannedCount)}</span>
               </p>
               <h2 className="mt-2 max-w-3xl font-serif text-3xl font-semibold tracking-tight drop-shadow-lg sm:text-5xl">
                 {greeting.hello} Your week, well trained.
@@ -164,6 +194,16 @@ export default function Planner() {
         </section>
 
         {showSetup && <div ref={setupRef}><SetupPanel onStart={startFirstSession} onFillWeek={fillWeekManually} onAskCoach={askCoach} /></div>}
+
+        {activeWorkout && !workoutOpen && <section className="surface-card mb-6 flex flex-wrap items-center justify-between gap-4 border-amber-500/30 bg-amber-50 px-5 py-4" aria-label={activeWorkoutIsToday ? "Today's workout in progress" : "Workout in progress"}>
+          <div><p className="eyebrow text-amber-800">{activeWorkoutIsToday ? `Workout in progress · Today’s ${todayWhen === "am" ? "morning" : "evening"}` : "Workout in progress"}</p><p className="mt-1 font-serif text-xl font-semibold">{plan[activeWorkout.slot]?.title ?? "Your session"}</p><p className="text-xs text-stone-500">Your progress and timer are saved on this device.</p></div>
+          <div className="flex flex-wrap gap-2"><button onClick={() => setWorkoutOpen(true)} className="button-primary bg-amber-700 hover:bg-amber-600">Resume workout</button>{activeWorkoutIsToday && !completions[todaySlot] && <button onClick={() => completeSession(todaySlot) && setReflectionSlot(todaySlot)} className="button-secondary">Mark complete</button>}</div>
+        </section>}
+
+        {todaySession && !activeWorkoutIsToday && <section className="surface-card mb-6 flex flex-wrap items-center justify-between gap-4 border-emerald-700/20 bg-emerald-50/60 px-5 py-4" aria-label="Today's session">
+          <div><p className="eyebrow text-emerald-700">Today’s session · {todayWhen === "am" ? "Morning" : "Evening"}</p><p className="mt-1 font-serif text-xl font-semibold">{todaySession.title}</p><p className="text-xs text-stone-500">{todaySession.minutes} minutes · {todaySession.focus}</p></div>
+          <div className="flex flex-wrap gap-2">{completions[todaySlot] ? <button onClick={() => setStorySlot(todaySlot)} className="button-secondary">Completed ✓ · view</button> : <><button onClick={() => openWorkout(todaySlot)} className="button-primary">Start workout</button><button onClick={() => completeSession(todaySlot) && setReflectionSlot(todaySlot)} className="button-secondary">Mark complete</button></>}</div>
+        </section>}
 
         {/* progress + coverage + verdict */}
         <div className="-mt-4 mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-[#e6e1d4] bg-white px-5 py-4 shadow-md">
@@ -236,13 +276,22 @@ export default function Planner() {
 
         {/* day story */}
         {storySlot && storySession && (
-          <DayStory slot={storySlot} session={storySession} onClose={() => setStorySlot(null)} />
+          <DayStory
+            slot={storySlot}
+            session={storySession}
+            completion={completions[storySlot]}
+            onClose={() => setStorySlot(null)}
+            onComplete={() => { if (completeSession(storySlot)) setReflectionSlot(storySlot); }}
+            onUndoComplete={() => uncompleteSession(storySlot)}
+            onReflect={() => setReflectionSlot(storySlot)}
+            onStartWorkout={() => openWorkout(storySlot)}
+          />
         )}
 
         {/* the grid */}
         <div className="mb-2 flex items-center justify-between gap-3">
           <div><p className="eyebrow text-stone-400">The week at a glance</p><h2 className="font-serif text-2xl font-semibold">Your training board.</h2></div>
-          <p className="hidden text-xs text-stone-400 sm:block">Select a session for the full story · + to add</p>
+          <div className="flex items-center gap-2"><p className="hidden text-xs text-stone-400 sm:block">Select a session for the full story · + to add</p>{plannedCount > 0 && <button onClick={() => setShowCompletedOnly((value) => !value)} aria-pressed={showCompletedOnly} className="button-secondary px-3 py-2 text-[11px]">{showCompletedOnly ? "Showing completed" : "Completed only"}</button>}</div>
         </div>
         <p className="mb-2 text-xs text-stone-500 sm:hidden">Swipe sideways to see all seven days. Tap a session to view its story.</p>
         <div className="overflow-x-auto rounded-2xl pb-2">
@@ -267,7 +316,7 @@ export default function Planner() {
                     return (
                       <td key={slot} className="px-1">
                         {s ? (
-                          <div className={`group relative h-full w-full rounded-xl p-3 text-left transition-transform hover:-translate-y-0.5 hover:shadow-lg ${FOCUS_META[s.focus].chip}`}>
+                          <div className={`group relative h-full w-full rounded-xl p-3 text-left transition-transform hover:-translate-y-0.5 hover:shadow-lg ${FOCUS_META[s.focus].chip} ${showCompletedOnly && !completions[slot] ? "hidden" : ""} ${slot === todaySlot ? "ring-2 ring-emerald-700 ring-offset-2" : ""}`}>
                             <button
                               onClick={() => setStorySlot(slot)}
                               aria-label={`Open ${s.title} details for ${DAYS[d]} ${when}`}
@@ -277,9 +326,11 @@ export default function Planner() {
                             <p className="mt-0.5 font-serif text-sm font-semibold leading-tight">{s.title}</p>
                             <p className="mt-1 text-[11px] opacity-80">{s.minutes} min · {s.intensity}{s.refuel ? ` · 🍽️` : ""}</p>
                             </button>
+                            <button onClick={() => completions[slot] ? uncompleteSession(slot) : completeSession(slot) && setReflectionSlot(slot)} aria-pressed={!!completions[slot]} aria-label={completions[slot] ? `Mark ${s.title} incomplete` : `Mark ${s.title} complete`} className={`mt-3 rounded-full px-2.5 py-1 text-[10px] font-bold transition ${completions[slot] ? "bg-emerald-700 text-white" : "bg-black/10 text-black/60 hover:bg-emerald-700 hover:text-white"}`}>{completions[slot] ? "✓ Done" : "Mark done"}</button>
+                            {!completions[slot] && <button onClick={() => openWorkout(slot)} aria-label={`Start guided workout for ${s.title}`} className="mt-3 ml-1 rounded-full border border-black/15 px-2.5 py-1 text-[10px] font-bold text-black/60 transition hover:bg-black/10">Start</button>}
                             <button onClick={() => setSlotMenu(slot)} aria-label={`Replace ${s.title}`} className="absolute bottom-1.5 right-2 hidden text-[10px] font-semibold text-black/50 underline-offset-2 hover:underline group-hover:block focus:block">Replace</button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); clearSlot(slot); }}
+                              onClick={(e) => { e.stopPropagation(); if (activeWorkout?.slot === slot && !window.confirm("This workout is in progress. Clear the session and discard its saved workout progress?")) return; clearSlot(slot); }}
                               title="Rest day"
                               aria-label={`Clear ${DAYS[d]} ${when} session and make it a rest day`}
                               className="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-black/10 text-xs hover:bg-black/25 group-hover:flex focus:flex"
@@ -306,6 +357,10 @@ export default function Planner() {
             </tbody>
           </table>
         </div>
+
+        {plannedCount > 0 && <ProgressDashboard onReview={reviewWeek} onNextWeek={startNextWeek} />}
+
+        <PlanningTools />
 
         {/* insights: volume + overload */}
         {plannedCount > 0 && <Insights />}
@@ -345,8 +400,8 @@ export default function Planner() {
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white">Refuel of the moment</p>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-2 p-5">
-              <p className="font-serif text-xl font-semibold">{spotlight.name}</p>
-              <p className="text-xs italic text-stone-500">{spotlight.why}</p>
+              <div><p className="font-serif text-xl font-semibold">{spotlight.title}</p><p className="mt-1 text-sm text-stone-600">{spotlight.plate}</p></div>
+              <p className="text-xs italic text-stone-500">{spotlight.reason}</p>
             </div>
           </section>
         )}
@@ -358,9 +413,13 @@ export default function Planner() {
       </main>
 
       {/* slot menu */}
-      {slotMenu && <SlotMenu slot={slotMenu} onClose={() => setSlotMenu(null)} />}
+      {slotMenu && <SlotMenu slot={slotMenu} activeWorkoutSlot={activeWorkout?.slot} onClose={() => setSlotMenu(null)} />}
 
       {showConnectModal && <ConnectModal onConnected={() => setShowConnectModal(false)} />}
+
+      {reflectionSlot && completions[reflectionSlot] && <ReflectionPanel entry={completions[reflectionSlot]!} onSave={(input) => updateCompletion(reflectionSlot, input)} onClose={() => setReflectionSlot(null)} />}
+
+      {workoutOpen && activeWorkout && plan[activeWorkout.slot] && <WorkoutMode session={plan[activeWorkout.slot]} onClose={() => setWorkoutOpen(false)} onFinished={() => { const slot = activeWorkout.slot; setWorkoutOpen(false); setReflectionSlot(slot); }} />}
 
       <CoachVoice mcpConnected={!!mcpStatus?.supported} />
     </div>
@@ -390,18 +449,21 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
   );
 }
 
-function SlotMenu({ slot, onClose }: { slot: Slot; onClose: () => void }) {
+function SlotMenu({ slot, onClose, activeWorkoutSlot }: { slot: Slot; onClose: () => void; activeWorkoutSlot?: Slot }) {
   const preferences = usePlan((s) => s.preferences);
+  const plan = usePlan((s) => s.plan);
   const [copied, setCopied] = useState(false);
   const [selectedIntensity, setSelectedIntensity] = useState(preferences.intensity);
   const [d, when] = slot.split("-");
   const dayName = DAYS[Number(d)];
   const whenName = when === "am" ? "Morning" : "Evening";
   const focus = (["legs", "push", "pull", "core", "cardio", "mobility"] as const)[Number(d) % 6];
-  const preview = useMemo(() => generateSession(focus, selectedIntensity, preferences), [focus, selectedIntensity, preferences]);
+  const refuelOptions = useMemo(() => ({ ...preferences, excludeRefuelIds: refuelIdsFromSessions(Object.values(plan)) }), [plan, preferences]);
+  const preview = useMemo(() => generateSession(focus, selectedIntensity, refuelOptions), [focus, selectedIntensity, refuelOptions]);
   const generate = (intensity: "light" | "moderate" | "brutal") => {
     setSelectedIntensity(intensity);
-    usePlan.getState().placeSession(slot, intensity === selectedIntensity ? preview : generateSession(focus, intensity, preferences));
+    if (activeWorkoutSlot === slot && !window.confirm("This workout is in progress. Replace the session and discard its saved workout progress?")) return;
+    usePlan.getState().placeSession(slot, intensity === selectedIntensity ? preview : generateSession(focus, intensity, refuelOptions));
     onClose();
   };
   const coachPrompt = `Plan a ${when === "am" ? "morning" : "evening"} session for ${dayName} in Gym & Tonic — pick the muscle group my week is missing.`;
@@ -416,6 +478,7 @@ function SlotMenu({ slot, onClose }: { slot: Slot; onClose: () => void }) {
           <p className="mt-1 font-serif text-lg font-semibold">{preview.title}</p>
           <p className="mt-1 text-xs text-stone-500">{preview.minutes} min · {preview.focus} · {preview.exercises.length} exercises{preview.refuel ? ` · ${preview.refuel}` : ""}</p>
         </div>
+
         <div className="mt-4 space-y-2">
           {(
             [

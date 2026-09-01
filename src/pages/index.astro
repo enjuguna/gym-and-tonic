@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
-import Corkboard from "../components/Corkboard";
+import Showcase from "../components/Showcase";
+const analyticsDomain = import.meta.env.PROD && import.meta.env.PUBLIC_ENABLE_ANALYTICS === "true" ? import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN : undefined;
 ---
 <!doctype html>
 <html lang="en">
@@ -10,9 +11,9 @@ import Corkboard from "../components/Corkboard";
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#31572c" />
+    <meta name="description" content="A calm, Kenyan-first weekly training planner that stays on your device." />
     <title>Gym &amp; Tonic — Your week, well trained.</title>
+    {analyticsDomain && <script is:inline defer data-domain={analyticsDomain} src="https://plausible.io/js/script.js"></script>}
   </head>
-  <body class="bg-[#f7f5ef] text-[#26251f]">
-    <Corkboard client:load />
-  </body>
+  <body><Showcase client:load /></body>
 </html>

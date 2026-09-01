@@ -1,43 +1,13 @@
 ---
+import "../styles/global.css";
+import InfoPage from "../components/InfoPage.astro";
 import { toolSpecs } from "../lib/webmcp";
 const specs = toolSpecs();
+const readTools = specs.filter((tool) => tool.readOnly);
+const proposalTools = specs.filter((tool) => !tool.readOnly);
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Gym &amp; Tonic — Site tools reference</title>
-  </head>
-  <body class="min-h-screen bg-[#f7f5ef] px-4 py-10 text-[#26251f]">
-    <main class="mx-auto max-w-3xl">
-      <a href="/" class="text-sm text-stone-400 hover:underline">← Back to the grid</a>
-      <h1 class="mt-3 font-serif text-3xl font-bold tracking-tight">Gym &amp; Tonic site tools</h1>
-      <p class="mt-2 text-stone-600">
-        Gym &amp; Tonic registers these {specs.length} tools with any WebMCP-compatible agent
-        (ChatGPT desktop built-in browser, Chrome with WebMCP). Your coach can inspect the week,
-        generate sessions, and check balance — but every change to the plan is staged as a
-        <strong>pending proposal you approve</strong>. The agent never silently touches your training week.
-      </p>
-      <div class="mt-8 space-y-5">
-        {specs.map((t) => (
-          <section class="rounded-2xl border border-[#e6e1d4] bg-white p-5 shadow-sm">
-            <div class="flex flex-wrap items-center gap-2">
-              <h2 class="font-mono text-lg font-semibold">{t.name}</h2>
-              <span class={`rounded-full px-2 py-0.5 text-xs font-medium ${t.readOnly ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800"}`}>
-                {t.readOnly ? "read-only" : "writes via your approval"}
-              </span>
-            </div>
-            <p class="mt-1 text-sm text-stone-600">{t.description}</p>
-            <details class="mt-3">
-              <summary class="cursor-pointer text-xs uppercase tracking-wide text-stone-400">Input schema</summary>
-              <pre class="mt-2 overflow-x-auto rounded-lg bg-zinc-900 p-3 text-xs text-zinc-100">{JSON.stringify(t.inputSchema, null, 2)}</pre>
-            </details>
-          </section>
-        ))}
-      </div>
-      <footer class="mt-10 border-t border-[#e6e1d4] pt-5 text-center text-xs text-stone-400">
-        Tools live on the page — close the tab and they're gone. Nothing runs without your open session.
-      </footer>
-    </main>
-  </body>
-</html>
+<InfoPage title="A coach that asks first." eyebrow="WebMCP site tools" description={`${specs.length} browser tools let a compatible coach understand your week and suggest changes without taking control.`}>
+  <section class="mt-12 grid gap-5 md:grid-cols-3"><article class="surface-card p-5"><p class="font-display text-4xl text-[var(--sage)]">{readTools.length}</p><h2 class="mt-3 font-display text-xl font-semibold">Read tools</h2><p class="mt-2 text-sm leading-6 text-[var(--muted)]">A coach can inspect the week, balance, gear, progress, and local history.</p></article><article class="surface-card p-5"><p class="font-display text-4xl text-[var(--terra)]">{proposalTools.length}</p><h2 class="mt-3 font-display text-xl font-semibold">Proposal tools</h2><p class="mt-2 text-sm leading-6 text-[var(--muted)]">Changes are staged on your board for a human decision.</p></article><article class="surface-card p-5"><p class="font-display text-4xl text-[var(--ink)]">0</p><h2 class="mt-3 font-display text-xl font-semibold">Silent changes</h2><p class="mt-2 text-sm leading-6 text-[var(--muted)]">A coach cannot quietly alter your plan or mark your workout complete.</p></article></section>
+  <section class="mt-12 rounded-[1.5rem] bg-[var(--ink)] p-6 text-white sm:p-8"><p class="eyebrow text-[#f2b36f]">The permission model</p><h2 class="mt-3 max-w-2xl font-display text-3xl font-semibold">Inspect freely. Propose clearly. You approve every plan change.</h2><p class="mt-4 max-w-2xl text-sm leading-7 text-white/70">Tools only exist while you have Gym &amp; Tonic open in a compatible client. They do not create an account, run in the background, or take ownership of your training.</p><a href="/plan" class="button-primary mt-6 inline-block bg-white text-[var(--sage-deep)] hover:bg-[var(--surface-subtle)]">Open planner</a></section>
+  <section class="mt-12"><div class="flex flex-wrap items-end justify-between gap-3"><div><p class="eyebrow text-[var(--sage)]">Tool directory</p><h2 class="mt-2 font-display text-3xl font-semibold">What your coach can do</h2></div><p class="text-xs text-[var(--muted)]">Schemas are available for technical clients.</p></div><div class="mt-7 grid gap-4 md:grid-cols-2">{specs.map((tool) => <article class="surface-card p-5"><div class="flex items-start justify-between gap-3"><h3 class="break-all font-mono text-sm font-semibold">{tool.name}</h3><span class={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${tool.readOnly ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800"}`}>{tool.readOnly ? "Read only" : "Approval required"}</span></div><p class="mt-3 text-sm leading-6 text-[var(--muted)]">{tool.description}</p><details class="mt-4 border-t border-[var(--line)] pt-3"><summary class="cursor-pointer text-xs font-semibold text-[var(--sage-deep)]">View input schema</summary><pre class="mt-3 overflow-x-auto rounded-xl bg-[var(--ink)] p-3 text-[11px] leading-5 text-stone-100">{JSON.stringify(tool.inputSchema, null, 2)}</pre></details></article>)}</div></section>
+</InfoPage>

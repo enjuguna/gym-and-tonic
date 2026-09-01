@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EXERCISES, balanceCheck, gearList, generateSession, exerciseById } from "./coach";
+import { REFUEL_CATALOG } from "./kenyanFlavor";
 import type { Session } from "./types";
 
 describe("exercise catalogue", () => {
@@ -65,6 +66,22 @@ describe("generateSession", () => {
     expect(s.exercises.length).toBeGreaterThanOrEqual(2);
     expect(s.minutes).toBeGreaterThanOrEqual(20);
     expect(s.refuel).toBeTruthy();
+    expect(s.refuelDetail).toBeTruthy();
+    expect(s.refuel).toBe(s.refuelDetail?.title);
+  });
+
+  it("uses a specific Kenyan plate and avoids refuels already on the board", () => {
+    const first = generateSession("legs");
+    const second = generateSession("push", "moderate", { excludeRefuelIds: [first.refuelDetail!.id] });
+    expect(REFUEL_CATALOG.some((dish) => dish.id === first.refuelDetail?.id)).toBe(true);
+    expect(second.refuelDetail?.id).not.toBe(first.refuelDetail?.id);
+    expect(first.refuelDetail?.plate).toBeTruthy();
+    expect(first.refuelDetail?.reason).toBeTruthy();
+  });
+
+  it("falls back to the catalogue once every refuel has been used", () => {
+    const session = generateSession("cardio", "light", { excludeRefuelIds: REFUEL_CATALOG.map((dish) => dish.id) });
+    expect(REFUEL_CATALOG.map((dish) => dish.id)).toContain(session.refuelDetail?.id);
   });
 
   it("honours home and under-30 setup preferences when possible", () => {

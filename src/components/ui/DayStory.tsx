@@ -4,6 +4,7 @@ import { sceneFor } from "../../lib/scenes";
 import { exerciseById } from "../../lib/coach";
 import { MARGIN_NOTES } from "../../lib/kenyanFlavor";
 import type { Session } from "../../lib/types";
+import type { CompletionEntry, Slot } from "../../lib/types";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -12,10 +13,20 @@ export function DayStory({
   slot,
   session,
   onClose,
+  completion,
+  onComplete,
+  onUndoComplete,
+  onReflect,
+  onStartWorkout,
 }: {
-  slot: string;
+  slot: Slot;
   session: Session;
   onClose: () => void;
+  completion?: CompletionEntry;
+  onComplete: () => void;
+  onUndoComplete: () => void;
+  onReflect: () => void;
+  onStartWorkout: () => void;
 }) {
   const [d, when] = slot.split("-");
   const scene = sceneFor(session.focus, when);
@@ -90,8 +101,14 @@ export function DayStory({
             <p className="font-serif text-xs italic text-stone-400">
               {MARGIN_NOTES[Number(d) % MARGIN_NOTES.length]}
             </p>
-          </div>
         </div>
+
+        <div className="sm:col-span-2 flex flex-wrap items-center gap-3 border-t border-[var(--line)] pt-5">
+          {completion ? <button onClick={onUndoComplete} className="button-secondary">Completed ✓ · mark incomplete</button> : <><button onClick={onStartWorkout} className="button-primary">Start guided workout</button><button onClick={onComplete} className="button-secondary">Mark session complete</button></>}
+          {completion && <button onClick={onReflect} className="button-quiet">Add a reflection</button>}
+          {completion?.note && <p className="w-full text-sm italic text-stone-500">“{completion.note}”</p>}
+        </div>
+      </div>
 
         {/* refuel recipe card — solid premium treatment, aligned to grid */}
         {session.refuel && (
@@ -102,10 +119,8 @@ export function DayStory({
               </p>
             </div>
             <div className="p-4">
-              <p className="font-serif text-lg font-semibold leading-tight">{session.refuel}</p>
-              <p className="mt-2 text-xs italic leading-relaxed text-stone-400">
-                Recovery starts in the kitchen. Eat like you mean it.
-              </p>
+              <p className="font-serif text-lg font-semibold leading-tight">{session.refuelDetail?.title ?? session.refuel}</p>
+              {session.refuelDetail ? <><p className="mt-2 text-sm leading-relaxed text-stone-600">{session.refuelDetail.plate}</p><p className="mt-2 text-xs italic leading-relaxed text-stone-400">{session.refuelDetail.reason}</p></> : <p className="mt-2 text-xs italic leading-relaxed text-stone-400">A familiar Kenyan plate to enjoy after your session.</p>}
             </div>
           </aside>
         )}

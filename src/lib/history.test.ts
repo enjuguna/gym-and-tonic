@@ -4,6 +4,7 @@ import {
   loadHistory,
   overloadCheck,
   personalRecords,
+  progressReport,
   saveWeek,
 } from "./history";
 import type { Session } from "./types";
@@ -61,5 +62,17 @@ describe("history persistence + PRs", () => {
     expect(pr.weeksTracked).toBe(2);
     expect(pr.totalSessionsAllTime).toBe(2);
     expect(pr.biggestSession?.title).toBe("a"); // 60 min wins
+  });
+});
+
+describe("progress report", () => {
+  it("separates planned and completed volume", () => {
+    const plan = { "0-am": mk("a", "legs", 30), "1-pm": mk("b", "push", 40) };
+    const r = progressReport(plan, { "0-am": { completedAt: 1 } });
+    expect(r.plannedCount).toBe(2);
+    expect(r.completedCount).toBe(1);
+    expect(r.plannedMinutes).toBe(70);
+    expect(r.completedMinutes).toBe(30);
+    expect(r.consistencyPct).toBe(50);
   });
 });

@@ -95,6 +95,26 @@ class SoundEngine {
     } catch { /* audio unavailable */ }
   }
 
+  /** A short opt-in workout cue. It never starts the ambient rain loop. */
+  alert() {
+    try {
+      const ctx = this.ensure();
+      [523.25, 659.25].forEach((frequency, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const at = ctx.currentTime + index * 0.12;
+        osc.type = "sine";
+        osc.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.linearRampToValueAtTime(0.09, at + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.3);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(at);
+        osc.stop(at + 0.32);
+      });
+    } catch { /* audio unavailable */ }
+  }
+
   toggle(on: boolean) {
     this.enabled = on;
     if (on) this.startRain();

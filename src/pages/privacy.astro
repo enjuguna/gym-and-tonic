@@ -1,0 +1,12 @@
+---
+import "../styles/global.css";
+import InfoPage from "../components/InfoPage.astro";
+---
+<InfoPage title="Your training stays yours." eyebrow="Plain-language privacy" accent="terra" description="Gym & Tonic is designed to keep your training week on your device, with only limited anonymous product measurement when it is enabled.">
+  <section class="mt-12 grid gap-5 md:grid-cols-3">
+    <article class="surface-card p-5"><p class="eyebrow text-[var(--sage)]">Stored here</p><h2 class="mt-3 font-display text-2xl font-semibold">Your browser</h2><p class="mt-3 text-sm leading-6 text-[var(--muted)]">Plans, workout progress, reflections, and preferences are stored locally in the browser you are using.</p></article>
+    <article class="surface-card p-5"><p class="eyebrow text-[var(--terra)]">Never sent</p><h2 class="mt-3 font-display text-2xl font-semibold">Your training content</h2><p class="mt-3 text-sm leading-6 text-[var(--muted)]">We do not send workout titles, notes, reflections, history, or slot details to analytics.</p></article>
+    <article class="surface-card p-5"><p class="eyebrow text-[var(--sage)]">Your choice</p><h2 class="mt-3 font-display text-2xl font-semibold">Export or remove</h2><p class="mt-3 text-sm leading-6 text-[var(--muted)]">Use Data controls inside the planner to download a backup, restore one, turn off analytics, or delete local data.</p></article>
+  </section>
+  <section class="mt-12 grid gap-8 border-t border-[var(--line)] pt-10 lg:grid-cols-[.8fr_1.2fr]"><div><p class="eyebrow text-[var(--terra)]">Anonymous analytics</p><h2 class="mt-3 font-display text-3xl font-semibold">A little evidence, not surveillance.</h2></div><div class="space-y-4 text-sm leading-7 text-[var(--muted)]"><p>When production analytics are enabled, they measure broad actions such as opening the planner, placing a first session, or completing a workout. They help us understand whether the product is useful.</p><p>No account is created. No persistent user ID, note, session name, reflection, or training history is included. You can opt out at any time in Data controls.</p><p>This page explains the current local-first experience. Before the product collects contact details, payments, health information, or other personal information, obtain an appropriate Kenyan privacy and legal review.</p></div></section>
+</InfoPage>
