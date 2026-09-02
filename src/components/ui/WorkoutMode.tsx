@@ -73,6 +73,16 @@ export function WorkoutMode({ session, onClose, onFinished }: { session: Session
   const timerFinished = timer?.status === "finished";
   const actionLabel = currentStep?.status === "completed" ? "Completed" : currentStep?.status === "skipped" ? "Skipped" : "Mark exercise done";
 
+  const completeCurrentExercise = () => {
+    if (!workout || !currentStep || currentStep.status !== "pending") return;
+    // The player has explicitly completed the final open step. Finish the
+    // session now and hand off to the optional reflection panel; timers never
+    // take this path on their own.
+    const closesWorkout = workout.steps.every((step, index) => step.status !== "pending" || index === currentIndex);
+    setStep(currentIndex, "completed");
+    if (closesWorkout && finishWorkout()) onFinished();
+  };
+
   const requestFinish = () => {
     if (unfinished > 0) setConfirmFinish(true);
     else if (finishWorkout()) onFinished();
@@ -133,7 +143,7 @@ export function WorkoutMode({ session, onClose, onFinished }: { session: Session
                 </div>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
-                <button disabled={currentStep.status !== "pending"} onClick={() => setStep(currentIndex, "completed")} className="min-h-12 rounded-full bg-emerald-400 px-6 text-sm font-bold text-[#173015] disabled:cursor-default disabled:opacity-60">{actionLabel}</button>
+                <button disabled={currentStep.status !== "pending"} onClick={completeCurrentExercise} className="min-h-12 rounded-full bg-emerald-400 px-6 text-sm font-bold text-[#173015] disabled:cursor-default disabled:opacity-60">{actionLabel}</button>
                 {currentStep.status === "pending" && <button onClick={() => setStep(currentIndex, "skipped")} className="min-h-12 rounded-full border border-white/25 px-5 text-sm font-bold hover:bg-white/10">Skip exercise</button>}
                 <button onClick={requestFinish} className="min-h-12 rounded-full border border-white/25 px-5 text-sm font-bold hover:bg-white/10">Finish workout</button>
               </div>
