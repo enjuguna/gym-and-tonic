@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SCENES, type Scene } from "../../lib/scenes";
 
 export function SceneImage({
@@ -14,9 +14,15 @@ export function SceneImage({
 }) {
   const meta = SCENES[scene];
   const [failed, setFailed] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const image = imageRef.current;
+    if (image?.complete && image.naturalWidth === 0) setFailed(true);
+  }, [meta.src]);
   return (
     <div className={`relative overflow-hidden bg-gradient-to-br ${meta.tone} to-zinc-800 ${className}`}>
       <img
+          ref={imageRef}
           src={failed ? meta.fallbackSrc : meta.src}
           alt={meta.alt}
           onError={() => setFailed(true)}
