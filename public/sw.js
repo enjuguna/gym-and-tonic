@@ -1,4 +1,4 @@
-const CACHE = "gym-tonic-shell-v3";
+const CACHE = "gym-tonic-shell-v4";
 const APP_SHELL = ["/", "/today", "/plan", "/progress", "/meals", "/settings", "/workout", "/privacy", "/data", "/safety", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -13,13 +13,30 @@ self.addEventListener("activate", (event) => event.waitUntil(
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
-  event.respondWith(caches.match(request).then((cached) => {
-    const network = fetch(request).then((response) => {
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(request);
+
+    // HTML is network-first so a deploy becomes visible after the next reload.
+    // Cached pages remain available when the device is offline.
+    if (request.mode === "navigate") {
+      try {
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      } catch {
+        return cached || cache.match("/today") || Response.error();
+      }
+    }
+
+    try {
+      const response = await fetch(request);
       if (response.ok && (request.destination === "image" || request.destination === "script" || request.destination === "style")) {
-        caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+        await cache.put(request, response.clone());
       }
       return response;
-    });
-    return cached || network.catch(() => request.mode === "navigate" ? caches.match("/plan") : Response.error());
-  }));
+    } catch {
+      return cached || Response.error();
+    }
+  })());
 });
