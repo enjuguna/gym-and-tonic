@@ -445,20 +445,23 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
   const c = 2 * Math.PI * r;
   const pct = Math.min(1, done / total);
   return (
-    <div className="relative h-20 w-20 shrink-0 -my-2" role="img" aria-label={`${done} of ${total} sessions planned`}>
+    <div className="flex shrink-0 flex-col items-center gap-1" role="progressbar" aria-label="Weekly sessions planned" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-valuetext={`${done} of ${total} sessions planned`}>
+      <div className="relative h-24 w-24">
       <svg viewBox="0 0 64 64" className="h-full w-full -rotate-90">
-        <circle cx="32" cy="32" r={r} fill="none" stroke="#e6e1d4" strokeWidth="6" />
+        <circle cx="32" cy="32" r={r} fill="none" stroke="var(--line)" strokeWidth="6" />
         <circle
           cx="32" cy="32" r={r} fill="none"
-          stroke="#31572c" strokeWidth="6" strokeLinecap="round"
+          stroke="var(--sage-deep)" strokeWidth="6" strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
           style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.22,1,0.36,1)" }}
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center font-serif text-sm font-bold">
-        {done}<span className="text-[10px] font-normal text-stone-400">/{total}</span>
+      <span className="absolute inset-0 grid place-items-center font-serif text-xl font-bold text-[var(--ink)]">
+        <span>{done}<span className="ml-0.5 text-[11px] font-normal text-[var(--muted)]">/{total}</span></span>
       </span>
+      </div>
+      <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">planned</span>
     </div>
   );
 }
