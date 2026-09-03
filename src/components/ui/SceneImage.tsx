@@ -23,7 +23,10 @@ export function SceneImage({
     <div className={`relative overflow-hidden bg-gradient-to-br ${meta.tone} to-zinc-800 ${className}`}>
       <img
           ref={imageRef}
-          src={failed ? meta.fallbackSrc : meta.src}
+          // The remote source is the verified production-safe image. The
+          // bundled local asset remains in the registry for offline-capable
+          // Git-based deployments where binary uploads are preserved.
+          src={meta.fallbackSrc}
           alt={meta.alt}
           onError={() => setFailed(true)}
           loading="lazy"
