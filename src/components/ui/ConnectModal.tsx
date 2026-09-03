@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useDialogFocus } from "./useDialogFocus";
 
 interface Props {
   onConnected: () => void;
@@ -7,6 +8,7 @@ interface Props {
 export function ConnectModal({ onConnected }: Props) {
   const [copied, setCopied] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const dialogRef = useDialogFocus<HTMLDivElement>();
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -38,7 +40,7 @@ export function ConnectModal({ onConnected }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onConnected}>
-      <div className="max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="connect-heading">
+      <div ref={dialogRef} className="max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="connect-heading">
         <h3 id="connect-heading" ref={headingRef} tabIndex={-1} className="font-serif text-2xl">Bring your coach online</h3>
         <p className="mt-2 text-sm text-stone-600">
           Gym & Tonic exposes its whole week as tools. You just need an MCP client to call them.

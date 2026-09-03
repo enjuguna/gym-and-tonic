@@ -3,6 +3,8 @@ import { exerciseById } from "../../lib/coach";
 import { sound } from "../../lib/sound";
 import { usePlan } from "../../lib/store";
 import type { Session } from "../../lib/types";
+import { ExerciseIllustration } from "./ExerciseIllustration";
+import { useDialogFocus } from "./useDialogFocus";
 
 function formatTime(milliseconds: number) {
   const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
@@ -79,8 +81,12 @@ export function WorkoutMode({ session, onClose, onFinished }: { session: Session
     // session now and hand off to the optional reflection panel; timers never
     // take this path on their own.
     const closesWorkout = workout.steps.every((step, index) => step.status !== "pending" || index === currentIndex);
+    const hasSkipped = workout.steps.some((step) => step.status === "skipped");
     setStep(currentIndex, "completed");
-    if (closesWorkout && finishWorkout()) onFinished();
+    if (closesWorkout) {
+      if (hasSkipped) setConfirmFinish(true);
+      else window.setTimeout(() => { if (finishWorkout()) onFinished(); }, 0);
+    }
   };
 
   const requestFinish = () => {
@@ -88,6 +94,7 @@ export function WorkoutMode({ session, onClose, onFinished }: { session: Session
     else if (finishWorkout()) onFinished();
   };
   const closeAndRestoreFocus = () => {
+    if (timer?.status === "running") toggleTimer();
     onClose();
     requestAnimationFrame(() => returnFocusRef.current?.focus());
   };
@@ -131,8 +138,14 @@ export function WorkoutMode({ session, onClose, onFinished }: { session: Session
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-300">Right now</p>
               <h3 className="mt-3 max-w-2xl font-serif text-5xl font-semibold leading-[0.95] tracking-tight sm:text-7xl">{exercise.name}</h3>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-stone-200">{exercise.cues}</p>
+              <details className="mt-4 max-w-xl rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-sm text-stone-200">
+                <summary className="cursor-pointer font-semibold text-emerald-200">How to do it</summary>
+                <p className="mt-2 leading-relaxed">{exercise.instructions ?? exercise.cues}</p>
+              </details>
+              <ExerciseIllustration exerciseId={exercise.id} />
+              <p className="mt-3 text-xs text-stone-400"><span className="font-bold text-stone-300">Easier option:</span> {exercise.easierAlternative ?? easierOption(exercise.group)}</p>
               <div className="mt-7 flex flex-wrap gap-2 text-xs text-stone-200">
-                <span className="rounded-full border border-white/15 px-3 py-1.5">{exercise.duration} min guide</span>
+                <span className="rounded-full border border-white/15 px-3 py-1.5">{exercise.blockMinutes ?? exercise.duration} min block</span>
                 {exercise.equipment.length ? exercise.equipment.map((item) => <span key={item} className="rounded-full border border-white/15 px-3 py-1.5">{item}</span>) : <span className="rounded-full border border-white/15 px-3 py-1.5">No equipment</span>}
               </div>
               <div className="mt-10 rounded-3xl border border-white/15 bg-white/[0.06] p-5 sm:p-6">
@@ -171,6 +184,11 @@ export function WorkoutMode({ session, onClose, onFinished }: { session: Session
   );
 }
 
+function easierOption(group: Session["focus"]) {
+  return ({ legs: "Use a chair or reduce the range.", push: "Use a wall or higher surface.", pull: "Use a lighter band or reduce the range.", core: "Keep one knee or hand supported.", cardio: "Slow the pace and keep the effort conversational.", mobility: "Shorten the range and move gently." })[group];
+}
+
 function ConfirmDialog({ title, detail, confirmLabel, onCancel, onConfirm }: { title: string; detail: string; confirmLabel: string; onCancel: () => void; onConfirm: () => void }) {
-  return <div className="fixed inset-0 z-10 grid place-items-center bg-black/55 p-5" role="alertdialog" aria-modal="true" aria-labelledby="workout-confirm-heading"><div className="w-full max-w-sm rounded-3xl bg-[#f7f5ef] p-6 text-[#26251f] shadow-2xl"><h3 id="workout-confirm-heading" className="font-serif text-2xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-relaxed text-stone-600">{detail}</p><div className="mt-6 flex flex-wrap gap-3"><button autoFocus onClick={onConfirm} className="button-primary">{confirmLabel}</button><button onClick={onCancel} className="button-secondary">Keep going</button></div></div></div>;
+  const dialogRef = useDialogFocus<HTMLDivElement>();
+  return <div className="fixed inset-0 z-10 grid place-items-center bg-black/55 p-5" role="alertdialog" aria-modal="true" aria-labelledby="workout-confirm-heading"><div ref={dialogRef} className="w-full max-w-sm rounded-3xl bg-[#f7f5ef] p-6 text-[#26251f] shadow-2xl"><h3 id="workout-confirm-heading" className="font-serif text-2xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-relaxed text-stone-600">{detail}</p><div className="mt-6 flex flex-wrap gap-3"><button autoFocus onClick={onConfirm} className="button-primary">{confirmLabel}</button><button onClick={onCancel} className="button-secondary">Keep going</button></div></div></div>;
 }

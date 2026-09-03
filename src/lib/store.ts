@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { ActiveWorkout, CompletionEntry, CompletionMap, Session, SetupPreferences, Slot, WorkoutAlertPreferences, WorkoutStepStatus, WorkoutTimer } from "./types";
 import { currentWeekKey, saveWeek } from "./history";
+import { isTrackingRecord, loadTracking, sanitizeTrackingRecord, type TrackingRecord } from "./tracking";
 import { exerciseById } from "./coach";
 import { track } from "./analytics";
 
@@ -48,6 +49,7 @@ interface PlanState {
   activityLog: ActivityEntry[];
 
   placeSession: (slot: Slot, session: Session, by?: "player" | "agent") => void;
+  replacePlanContent: (plan: Record<string, Session>) => void;
   clearSlot: (slot: Slot) => void;
   setPreference: <K extends keyof PlanState["preferences"]>(k: K, v: PlanState["preferences"][K]) => void;
   dismissSetup: () => void;
@@ -96,7 +98,7 @@ export interface ActivityEntry {
 let seq = 0;
 
 export const PLAN_STORAGE_KEY = "gt_plan";
-const PLAN_STORAGE_VERSION = 3;
+const PLAN_STORAGE_VERSION = 4;
 
 interface PersistedPlan {
   version: number;
@@ -112,6 +114,7 @@ interface PersistedPlan {
 export interface PlannerBackup extends PersistedPlan {
   exportedAt: number;
   format: "gym-tonic-plan";
+  tracking?: TrackingRecord;
 }
 
 const DEFAULT_PREFERENCES: SetupPreferences = { duration: "30to45", equipment: "gym", intensity: "moderate" };
@@ -121,9 +124,13 @@ function isSession(value: unknown): value is Session {
   if (!value || typeof value !== "object") return false;
   const session = value as Partial<Session>;
   return typeof session.id === "string" && typeof session.title === "string" &&
-    typeof session.minutes === "number" && Array.isArray(session.exercises) &&
+    session.id.length > 0 && session.title.length > 0 &&
+    typeof session.minutes === "number" && Number.isFinite(session.minutes) && session.minutes > 0 &&
+    Array.isArray(session.exercises) && session.exercises.every((id) => typeof id === "string" && id.length > 0) &&
     ["legs", "push", "pull", "core", "cardio", "mobility"].includes(session.focus ?? "") &&
-    ["light", "moderate", "brutal"].includes(session.intensity ?? "");
+    ["light", "moderate", "brutal"].includes(session.intensity ?? "") &&
+    (session.refuel === undefined || typeof session.refuel === "string") &&
+    (session.refuelDetail === undefined || (typeof session.refuelDetail === "object" && session.refuelDetail !== null && typeof session.refuelDetail.id === "string" && typeof session.refuelDetail.title === "string" && typeof session.refuelDetail.plate === "string" && typeof session.refuelDetail.reason === "string" && Array.isArray(session.refuelDetail.tags)));
 }
 
 function isPlan(value: unknown): value is Record<string, Session> {
@@ -133,7 +140,11 @@ function isPlan(value: unknown): value is Record<string, Session> {
 function isPreferences(value: unknown): value is SetupPreferences {
   if (!value || typeof value !== "object") return false;
   const p = value as Partial<SetupPreferences>;
-  return ["under30", "30to45", "45plus"].includes(p.duration ?? "") && ["home", "gym"].includes(p.equipment ?? "") && ["light", "moderate", "brutal"].includes(p.intensity ?? "");
+  return ["under30", "30to45", "45plus"].includes(p.duration ?? "") && ["home", "gym"].includes(p.equipment ?? "") && ["light", "moderate", "brutal"].includes(p.intensity ?? "") &&
+    (p.goal === undefined || ["weight-loss", "general-fitness", "build-strength"].includes(p.goal)) &&
+    (p.experience === undefined || ["beginner", "returning", "regular"].includes(p.experience)) &&
+    (p.dietaryPreference === undefined || ["omnivore", "vegetarian", "vegan", "pescatarian"].includes(p.dietaryPreference)) &&
+    (p.weightUnit === undefined || ["kg", "lb"].includes(p.weightUnit));
 }
 
 function sanitizeCompletions(value: unknown, plan: Record<string, Session>): CompletionMap {
@@ -184,17 +195,18 @@ export function loadPersistedPlan(): Pick<PlanState, "plan" | "preferences" | "h
   if (typeof window === "undefined") return defaults;
   try {
     const raw = JSON.parse(window.localStorage.getItem(PLAN_STORAGE_KEY) ?? "null") as Partial<PersistedPlan> | null;
-    if (!raw || !isPlan(raw.plan) || ![1, 2, PLAN_STORAGE_VERSION].includes(raw.version ?? 0) || (raw.version === PLAN_STORAGE_VERSION && !isPreferences(raw.preferences))) return defaults;
+    if (!raw || !isPlan(raw.plan) || ![1, 2, 3, PLAN_STORAGE_VERSION].includes(raw.version ?? 0) || (raw.version === PLAN_STORAGE_VERSION && !isPreferences(raw.preferences))) return defaults;
     const plan = raw.plan;
+    const storedVersion = raw.version ?? 0;
     return {
       plan,
-      preferences: isPreferences(raw.preferences) ? raw.preferences : defaults.preferences,
+      preferences: isPreferences(raw.preferences) ? { ...defaults.preferences, ...raw.preferences } : defaults.preferences,
       hasStarted: !!raw.hasStarted || Object.keys(plan).length > 0,
       setupDismissed: !!raw.setupDismissed,
-      completions: raw.version === 1 ? {} : sanitizeCompletions(raw.completions, plan),
+      completions: storedVersion === 1 ? {} : sanitizeCompletions(raw.completions, plan),
       reviewing: false,
-      activeWorkout: raw.version === PLAN_STORAGE_VERSION ? restoreActiveWorkout(raw.activeWorkout, plan) : null,
-      workoutAlerts: raw.version === PLAN_STORAGE_VERSION ? { ...DEFAULT_WORKOUT_ALERTS, ...raw.workoutAlerts } : DEFAULT_WORKOUT_ALERTS,
+      activeWorkout: storedVersion >= 3 ? restoreActiveWorkout(raw.activeWorkout, plan) : null,
+      workoutAlerts: storedVersion >= 3 ? { ...DEFAULT_WORKOUT_ALERTS, ...raw.workoutAlerts } : DEFAULT_WORKOUT_ALERTS,
     };
   } catch {
     return defaults;
@@ -221,6 +233,7 @@ export function exportPlannerBackup(): string {
     completions: state.completions,
     activeWorkout: state.activeWorkout,
     workoutAlerts: state.workoutAlerts,
+    tracking: loadTracking(),
   };
   return JSON.stringify(backup, null, 2);
 }
@@ -229,6 +242,7 @@ export function importPlannerBackup(input: string): boolean {
   try {
     const raw = JSON.parse(input) as Partial<PlannerBackup>;
     if (raw.format !== "gym-tonic-plan" || raw.version !== PLAN_STORAGE_VERSION || !isPlan(raw.plan) || !isPreferences(raw.preferences)) return false;
+    if (raw.tracking !== undefined && !isTrackingRecord(raw.tracking)) return false;
     const plan = raw.plan;
     usePlan.setState({
       plan,
@@ -242,6 +256,10 @@ export function importPlannerBackup(input: string): boolean {
       reviewing: false,
       activityLog: [],
     });
+    if (raw.tracking) {
+      const tracking = sanitizeTrackingRecord(raw.tracking);
+      localStorage.setItem("gt_tracking", JSON.stringify(tracking));
+    }
     track("plan_imported");
     return true;
   } catch { return false; }
@@ -251,6 +269,7 @@ export function resetPlannerData() {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem("gt_history");
     window.localStorage.removeItem("gt_templates");
+    window.localStorage.removeItem("gt_tracking");
   }
   usePlan.setState({ plan: {}, preferences: DEFAULT_PREFERENCES, hasStarted: false, setupDismissed: false, completions: {}, reviewing: false, activeWorkout: null, workoutAlerts: DEFAULT_WORKOUT_ALERTS, proposals: [], activityLog: [] });
   if (typeof window !== "undefined") window.localStorage.removeItem(PLAN_STORAGE_KEY);
@@ -274,6 +293,12 @@ export const usePlan = create<PlanState>((set, get) => ({
       if (Object.keys(s.plan).length === 0) track("first_session_placed");
       return { plan: { ...s.plan, [slot]: session }, completions, activeWorkout: s.activeWorkout?.slot === slot ? null : s.activeWorkout, hasStarted: true, activityLog: logActivity(s, { kind: "place", focus: session.focus, by }) };
     }),
+
+  replacePlanContent: (plan) => set((s) => {
+    const current = { ...s, plan };
+    persistPlan(current);
+    return { plan };
+  }),
 
   clearSlot: (slot) =>
     set((s) => {
@@ -322,17 +347,14 @@ export const usePlan = create<PlanState>((set, get) => ({
     const session = current.plan[slot];
     if (!session || current.completions[slot]) return false;
     if (current.activeWorkout) return current.activeWorkout.slot === slot && current.activeWorkout.sessionId === session.id;
+    const activeWorkout: ActiveWorkout = { slot, sessionId: session.id, startedAt: Date.now(), currentExerciseIndex: 0, phase: "exercise", steps: session.exercises.map((exerciseId) => ({ exerciseId, status: "pending" })) };
     set((s) => ({
-      activeWorkout: {
-        slot,
-        sessionId: session.id,
-        startedAt: Date.now(),
-        currentExerciseIndex: 0,
-        phase: "exercise",
-        steps: session.exercises.map((exerciseId) => ({ exerciseId, status: "pending" })),
-      },
+      activeWorkout,
       activityLog: logActivity(s, { kind: "workout-start", focus: session.focus, by: "player", detail: session.title }),
     }));
+    // Persist immediately so direct navigation to /workout cannot outrun the
+    // store subscription during a browser unload.
+    persistPlan({ ...current, activeWorkout });
     track("workout_started");
     return true;
   },
@@ -411,11 +433,13 @@ export const usePlan = create<PlanState>((set, get) => ({
     const workout = current.activeWorkout;
     const session = workout && current.plan[workout.slot];
     if (!workout || !session || session.id !== workout.sessionId || current.completions[workout.slot]) return false;
+    const completions = { ...current.completions, [workout.slot]: { completedAt: Date.now() } };
     set((s) => ({
-      completions: { ...s.completions, [workout.slot]: { completedAt: Date.now() } },
+      completions,
       activeWorkout: null,
       activityLog: logActivity(s, { kind: "complete", focus: session.focus, by: "player", detail: `Finished workout: ${session.title}` }),
     }));
+    persistPlan({ ...current, completions, activeWorkout: null });
     track("workout_finished");
     return true;
   },

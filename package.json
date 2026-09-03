@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest run",
+    "test": "vitest run --pool=threads --maxWorkers=1",
+    "test:e2e": "playwright test",
     "check": "astro check",
     "typecheck": "tsc --noEmit"
   },
@@ -32,7 +33,10 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/react": "^16.3.2",
+    "@types/node": "^26.4.1",
     "jsdom": "^30.0.1",
     "vitest": "^4.1.11"
   }

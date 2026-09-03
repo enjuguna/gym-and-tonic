@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "./tokens.css";
 
+/* Keep the small metadata labels readable on the warm paper background. */
+.text-stone-400 { color: #5f625b !important; }
+.text-stone-500 { color: #5b5b55 !important; }
+.text-stone-300 { color: #5b5b55 !important; }
+
 /* font utility bridging Tailwind's font-serif to Fraunces */
 @theme {
   --font-serif: "Fraunces Variable", Georgia, serif;

@@ -70,7 +70,7 @@ describe("generateSession", () => {
     expect(s.refuel).toBe(s.refuelDetail?.title);
   });
 
-  it("uses a specific Kenyan plate and avoids refuels already on the board", () => {
+  it("uses a specific meal and avoids refuels already on the board", () => {
     const first = generateSession("legs");
     const second = generateSession("push", "moderate", { excludeRefuelIds: [first.refuelDetail!.id] });
     expect(REFUEL_CATALOG.some((dish) => dish.id === first.refuelDetail?.id)).toBe(true);

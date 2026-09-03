@@ -11,11 +11,20 @@ export type MuscleGroup =
 export type Intensity = "light" | "moderate" | "brutal";
 export type WorkoutDuration = "under30" | "30to45" | "45plus";
 export type EquipmentPreference = "home" | "gym";
+export type FitnessGoal = "weight-loss" | "general-fitness" | "build-strength";
+export type ExperienceLevel = "beginner" | "returning" | "regular";
+export type DietaryPreference = "omnivore" | "vegetarian" | "vegan" | "pescatarian";
+export type WeightUnit = "kg" | "lb";
 
 export interface SetupPreferences {
   duration: WorkoutDuration;
   equipment: EquipmentPreference;
   intensity: Intensity;
+  goal?: FitnessGoal;
+  experience?: ExperienceLevel;
+  lowImpact?: boolean;
+  dietaryPreference?: DietaryPreference;
+  weightUnit?: WeightUnit;
   trainingDays?: DayIndex[];
   restDays?: DayIndex[];
 }
@@ -77,6 +86,10 @@ export interface Exercise {
   duration: number;
   equipment: string[];
   cues: string;
+  instructions?: string;
+  impact?: "low" | "moderate" | "high";
+  easierAlternative?: string;
+  blockMinutes?: number;
 }
 
 export interface Session {
@@ -87,9 +100,9 @@ export interface Session {
   minutes: number;
   exercises: string[]; // exercise ids
   note?: string;
-  /** Kenyan post-workout plate suggestion */
+  /** Post-workout meal suggestion */
   refuel?: string;
-  /** Additive detail for newer, specific Kenyan refuel suggestions. */
+  /** Additive detail for newer, specific meal suggestions. */
   refuelDetail?: RefuelDetail;
 }
 
@@ -98,7 +111,10 @@ export interface RefuelDetail {
   title: string;
   plate: string;
   reason: string;
-  tags: Array<"vegetarian" | "fish" | "chicken" | "meat" | "quick">;
+  tags: Array<"vegetarian" | "vegan" | "fish" | "chicken" | "meat" | "quick">;
+  prepMinutes?: number;
+  ingredients?: string[];
+  substitutions?: string[];
 }
 
 export interface GearItem {
@@ -113,3 +129,9 @@ export interface WeekTemplate {
   preferences: SetupPreferences;
   createdAt: number;
 }
+
+export interface WeightEntry { date: string; kg: number; }
+export type WeightEntries = Record<string, WeightEntry>;
+export type WalkingEntries = Record<string, number>;
+export type HabitId = "movement-break" | "vegetables" | "prepare-meal" | "wind-down" | "screen-free-bedtime";
+export type HabitChecks = Record<string, Partial<Record<HabitId, boolean>>>;

@@ -12,7 +12,7 @@ Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) · Septembe
 - Every write is a **staged proposal**: 🟢 new session, 🟡 swap, 🔴 callout ("No leg day?! The squats know what you did.").
 - You approve, reject, or drag things around yourself. The coach suggests; you decide.
 
-## The 15 site tools
+## The 17 site tools
 
 | Tool | Type | What it does |
 |---|---|---|
@@ -34,14 +34,18 @@ Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) · Septembe
 
 Registered via `document.modelContext.registerTool()`; all writes flow through one `applyProposal()` path so review UI and audit trail are automatic. The agent can never silently change your training week.
 
-## Kenyan at heart
+## Global fitness, familiar food
 
-Post-workout refuels use recognisable everyday Kenyan plates: ndengu with rice and avocado, chapati with maharagwe, tilapia with ugali and sukuma, mukimo wa njahi, matoke stew, omena with managu, and more. Each suggestion names the plate and gives a short, practical reason; it is guidance, not a recipe or prescription. The default cardio day is a Karura trail run.
+Gym & Tonic is English-led and designed for people starting or returning to exercise anywhere. Choose weight loss, general fitness, or building strength, then plan manageable sessions, optional walking and daily habits. Meal ideas span familiar plates from different food traditions, with dietary filters and practical descriptions. Suggestions are informational, not recipes, calorie prescriptions, or medical advice.
 
 ## Product experience
 
-- `/` is a shareable Kenya-first product showcase; `/plan` is the full local planner.
+- `/` is a shareable product showcase; `/today` is the daily dashboard, `/plan` is the full weekly planner, and `/workout` is the focused guided-workout screen. `/progress`, `/meals`, and `/settings` provide focused supporting views.
 - Plans, reflections, progress, and active workouts are stored in the browser. Users can export, restore, or explicitly delete their local data.
+
+## Verification
+
+Run `npm test`, `npm run check`, `npm run typecheck`, and `npm run build` for the application gates. Run `npm run test:e2e` after `npm run build` for isolated Chromium and WebKit browser journeys; the suite uses deterministic local test data and never touches a user's saved plan.
 - The app shell and curated editorial images are available after the first successful load, even when connectivity drops.
 - Production-only Plausible analytics can measure high-level product actions. It never receives session content, notes, reflections, or history; users can opt out in Data controls.
 

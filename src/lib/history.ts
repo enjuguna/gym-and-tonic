@@ -63,11 +63,11 @@ export function progressReport(
   const completedEntries = entries.filter(([slot]) => !!completions[slot as Slot]);
   const plannedMinutes = entries.reduce((total, [, session]) => total + session.minutes, 0);
   const completedMinutes = completedEntries.reduce((total, [, session]) => total + session.minutes, 0);
-  const orderedCompleted = completedEntries
-    .map(([slot]) => Number(slot.split("-")[0]) * 2 + (slot.endsWith("pm") ? 1 : 0))
-    .sort((a, b) => a - b);
-  let currentStreak = orderedCompleted.length ? 1 : 0;
-  for (let i = orderedCompleted.length - 1; i > 0 && orderedCompleted[i] === orderedCompleted[i - 1] + 1; i--) currentStreak++;
+  const activeWeeks = new Set(history.filter((week) => Object.keys(week.completions ?? {}).length > 0).map((week) => week.weekKey));
+  if (completedEntries.length) activeWeeks.add(currentWeekKey());
+  let currentStreak = 0;
+  const cursor = new Date();
+  while (activeWeeks.has(currentWeekKey(cursor))) { currentStreak++; cursor.setDate(cursor.getDate() - 7); }
   const completedGroups = [...new Set(completedEntries.map(([, session]) => session.focus))] as MuscleGroup[];
   const historicalCompleted = history.reduce((total, week) => total + Object.keys(week.completions ?? {}).length, 0);
   const historicalBest = history.reduce<ProgressReport["bestWeek"]>((best, week) => {

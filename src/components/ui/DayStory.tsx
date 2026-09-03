@@ -5,6 +5,7 @@ import { exerciseById } from "../../lib/coach";
 import { MARGIN_NOTES } from "../../lib/kenyanFlavor";
 import type { Session } from "../../lib/types";
 import type { CompletionEntry, Slot } from "../../lib/types";
+import { intensityLabel } from "../../lib/plannerMeta";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -56,7 +57,7 @@ export function DayStory({
         <div className="flex h-full flex-col justify-end bg-gradient-to-t from-black/60 via-black/10 to-black/30 p-6 text-white">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] drop-shadow">
             {DAYS[Number(d)]} · {when === "am" ? "Morning" : "Evening"} ·{" "}
-            <span className="rounded bg-white/15 px-1.5 py-0.5 backdrop-blur-sm">{session.intensity}</span>
+            <span className="rounded bg-white/15 px-1.5 py-0.5 backdrop-blur-sm">{intensityLabel(session.intensity)}</span>
           </p>
           <h2 id="session-story-heading" className="mt-1 font-serif text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">
             {session.title}
@@ -120,7 +121,7 @@ export function DayStory({
             </div>
             <div className="p-4">
               <p className="font-serif text-lg font-semibold leading-tight">{session.refuelDetail?.title ?? session.refuel}</p>
-              {session.refuelDetail ? <><p className="mt-2 text-sm leading-relaxed text-stone-600">{session.refuelDetail.plate}</p><p className="mt-2 text-xs italic leading-relaxed text-stone-400">{session.refuelDetail.reason}</p></> : <p className="mt-2 text-xs italic leading-relaxed text-stone-400">A familiar Kenyan plate to enjoy after your session.</p>}
+              {session.refuelDetail ? <><p className="mt-2 text-sm leading-relaxed text-stone-600">{session.refuelDetail.plate}</p><p className="mt-2 text-xs italic leading-relaxed text-stone-400">{session.refuelDetail.reason}</p></> : <p className="mt-2 text-xs italic leading-relaxed text-stone-400">A practical meal idea to enjoy after your session.</p>}
             </div>
           </aside>
         )}

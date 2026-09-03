@@ -1,0 +1,5 @@
+---
+import AppPage from "../components/AppPage.astro";
+import MealsPage from "../components/MealsPage";
+---
+<AppPage active="meals" title="Meal ideas" description="Practical food for real life"><MealsPage client:only="react" /></AppPage>

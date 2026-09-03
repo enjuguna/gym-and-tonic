@@ -29,8 +29,7 @@ export const SCENES: Record<Scene, VisualAsset> = {
   // two women jogging the track, palm trees behind
   yoga: { src: "/images/yoga.webp", alt: "Track session under palm trees", tone: "from-teal-900/50", credit: "Pexels photo 20009464", license: "Pexels License" },
   trail: { src: "/images/trail.webp", alt: "Riverside run, braids in the wind", tone: "from-emerald-900/60", credit: "Pexels photo 8770397", license: "Pexels License" },
-  // Kenyan woman serving ugali na sukuma wiki — verified KENYA LIVE shirt
-  refuel: { src: "/images/refuel.webp", alt: "Ugali and sukuma wiki, served Kenyan-style", tone: "from-amber-900/50", credit: "Pexels photo 10677797", license: "Pexels License" },
+  refuel: { src: "/images/gym-dark.webp", alt: "A person taking a meal break after movement", tone: "from-amber-900/50", credit: "Pexels photo 8770400", license: "Pexels License" },
   // smiling jogger on a sunny path
   "gym-dark": { src: "/images/gym-dark.webp", alt: "Smiling through the last kilometre", tone: "from-zinc-900/80", credit: "Pexels photo 8770400", license: "Pexels License" },
 };

@@ -1,0 +1,5 @@
+---
+import AppPage from "../components/AppPage.astro";
+import SettingsPage from "../components/SettingsPage";
+---
+<AppPage active="settings" title="Settings" description="Make the app fit you"><SettingsPage client:only="react" /></AppPage>

@@ -1,0 +1,5 @@
+---
+import AppPage from "../components/AppPage.astro";
+import ProgressPage from "../components/ProgressPage";
+---
+<AppPage active="progress" title="Progress" description="See your consistency"><ProgressPage client:only="react" /></AppPage>

@@ -48,7 +48,7 @@ describe("proposal application", () => {
   it("persists the active plan in a versioned storage record", () => {
     usePlan.getState().placeSession("0-am", session("persisted"));
     const saved = JSON.parse(localStorage.getItem("gt_plan")!);
-    expect(saved.version).toBe(3);
+    expect(saved.version).toBe(4);
     expect(saved.plan["0-am"].id).toBe("persisted");
   });
 
@@ -95,6 +95,17 @@ describe("proposal application", () => {
     expect(importPlannerBackup('{"format":"gym-tonic-plan"}')).toBe(false);
   });
 
+  it("round-trips tracking data and rejects malformed tracking without changing the plan", () => {
+    localStorage.setItem("gt_tracking", JSON.stringify({ version: 1, goal: "weight-loss", weightUnit: "kg", dietaryPreference: "vegan", weightEntries: {}, weightEnabled: true, walking: {}, selectedHabits: [], habitChecks: {}, mealFavorites: [] }));
+    usePlan.getState().placeSession("0-am", session("safe"));
+    const backup = exportPlannerBackup();
+    usePlan.setState({ plan: {} });
+    expect(importPlannerBackup(backup)).toBe(true);
+    expect(JSON.parse(localStorage.getItem("gt_tracking")!).goal).toBe("weight-loss");
+    expect(importPlannerBackup(backup.replace('"goal": "weight-loss"', '"goal": "invalid"'))).toBe(false);
+    expect(usePlan.getState().plan["0-am"]?.id).toBe("safe");
+  });
+
   it("only removes local planner data after the explicit reset action", () => {
     usePlan.getState().placeSession("0-am", session("remove"));
     localStorage.setItem("gt_history", "history");
@@ -111,6 +122,7 @@ describe("proposal application", () => {
     expect(usePlan.getState().activeWorkout?.steps).toHaveLength(2);
     expect(usePlan.getState().startWorkout("0-am")).toBe(true);
     expect(usePlan.getState().activityLog.filter((event) => event.kind === "workout-start")).toHaveLength(1);
+    expect(loadPersistedPlan().activeWorkout?.sessionId).toBe("guided");
   });
 
   it("tracks steps, starts a rest timer, and never silently completes the session", () => {
@@ -129,6 +141,14 @@ describe("proposal application", () => {
     expect(usePlan.getState().finishWorkout()).toBe(true);
     expect(usePlan.getState().completions["0-am"]).toBeTruthy();
     expect(usePlan.getState().activeWorkout).toBeNull();
+  });
+
+  it("finishes after the final exercise is explicitly marked done", () => {
+    usePlan.getState().placeSession("0-am", { ...session("final"), exercises: ["ex-plank"] });
+    usePlan.getState().startWorkout("0-am");
+    usePlan.getState().setWorkoutStep(0, "completed");
+    expect(usePlan.getState().finishWorkout()).toBe(true);
+    expect(usePlan.getState().completions["0-am"]).toBeTruthy();
   });
 
   it("clears active workout state when its session is replaced or cleared", () => {

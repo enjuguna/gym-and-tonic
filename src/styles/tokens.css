@@ -6,7 +6,7 @@
   --ink: #26251f;
   --sage: #4f772d;
   --sage-deep: #31572c;
-  --terra: #bc6c25;
+  --terra: #8f4c18;
   --line: #e6e1d4;
   --surface: #ffffff;
   --muted: #6f7068;
@@ -31,15 +31,18 @@ body {
 }
 
 .surface-card { border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-soft); }
+/* Muted utility aliases stay readable on both paper and white surfaces. */
+.text-stone-400 { color: #5f625b !important; }
+.text-stone-500 { color: #5b5b55 !important; }
 .eyebrow { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.18em; line-height: 1.2; text-transform: uppercase; }
-.button-primary { border-radius: 999px; background: var(--sage-deep); padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700; color: white; box-shadow: 0 4px 10px rgb(49 87 44 / 0.18); transition: transform .2s, background .2s; }
+.button-primary { min-height: 2.75rem; border-radius: 999px; background: var(--sage-deep); padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700; color: white; box-shadow: 0 4px 10px rgb(49 87 44 / 0.18); transition: transform .2s, background .2s; }
 .button-primary:hover { background: var(--sage); transform: translateY(-1px); }
-.button-secondary { border: 1px solid var(--line); border-radius: 999px; background: white; padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--sage-deep); transition: background .2s; }
+.button-secondary { min-height: 2.75rem; border: 1px solid var(--line); border-radius: 999px; background: white; padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--sage-deep); transition: background .2s; }
 .button-secondary:hover { background: #f0f5ec; }
 .button-quiet { padding: 0.65rem 0.5rem; font-size: 0.75rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 
 button, a, summary { -webkit-tap-highlight-color: transparent; }
-button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 
 /* film grain — barely-there texture that kills the flat web-app look */
 .grain::before {
@@ -67,6 +70,10 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 }
 .animate-rise { animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-kenburns { animation: kenburns 18s ease-in-out infinite alternate; }
+
+@media (hover: hover) {
+  .button-primary:active, .button-secondary:active { transform: translateY(1px); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,

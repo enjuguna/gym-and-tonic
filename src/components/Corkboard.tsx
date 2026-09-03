@@ -14,11 +14,11 @@ import { WorkoutMode } from "./ui/WorkoutMode";
 import { DataControls } from "./ui/DataControls";
 import { ConnectionStatus } from "./ui/ConnectionStatus";
 import { PlanningTools } from "./ui/PlanningTools";
-import { GHOST_COPY_KENYA, greetingEat, REFUEL_CATALOG, refuelIdsFromSessions } from "../lib/kenyanFlavor";
+import { GHOST_COPY, greetingEat, REFUEL_CATALOG, refuelIdsFromSessions } from "../lib/kenyanFlavor";
 import { saveWeek, currentWeekKey } from "../lib/history";
 import type { SessionGenerationOptions, Slot } from "../lib/types";
 import { sound } from "../lib/sound";
-import { FOCUS_META, GROUPS, weekPhase } from "../lib/plannerMeta";
+import { FOCUS_META, GROUPS, intensityLabel, weekPhase } from "../lib/plannerMeta";
 
 /** Ask the coach voice to say something. */
 function enqueueCoachLine(text: string) {
@@ -53,6 +53,8 @@ export default function Planner() {
   const [reflectionSlot, setReflectionSlot] = useState<Slot | null>(null);
   const [showCompletedOnly, setShowCompletedOnly] = useState(false);
   const [workoutOpen, setWorkoutOpen] = useState(false);
+  const [boardView, setBoardView] = useState<"day" | "week">("day");
+  const [selectedDay, setSelectedDay] = useState(((new Date().getDay() + 6) % 7) as number);
 
   useEffect(() => {
     registerAllTools().then(setMcpStatus).catch(console.error);
@@ -79,7 +81,7 @@ export default function Planner() {
   }, [complete, sessions, completions]);
 
   const storySession = storySlot ? plan[storySlot] : null;
-  const greeting = useMemo(() => greetingEat(new Date().getUTCHours() + 3), []);
+  const greeting = useMemo(() => greetingEat(new Date().getHours()), []);
   const coveredGroups = useMemo(() => new Set(sessions.map((s) => s.focus)), [sessions]);
   const spotlight = useMemo(() => {
     const usedDetails = sessions.flatMap((session) => session.refuelDetail ? [session.refuelDetail] : []);
@@ -87,10 +89,10 @@ export default function Planner() {
   }, [plannedCount, sessions]);
   const showSetup = hydrated && !setupDismissed && !complete && (!hasStarted || plannedCount < 2);
   const preferredDays = (preferences.trainingDays ?? ([0, 1, 2, 3, 4] as const)).filter((day) => !(preferences.restDays ?? []).includes(day));
-  const generationOptions: SessionGenerationOptions = useMemo(() => ({ duration: preferences.duration, equipment: preferences.equipment, excludeRefuelIds: usedRefuelIds }), [preferences.duration, preferences.equipment, usedRefuelIds]);
+  const generationOptions: SessionGenerationOptions = useMemo(() => ({ duration: preferences.duration, equipment: preferences.equipment, lowImpact: preferences.lowImpact ?? true, excludeRefuelIds: usedRefuelIds }), [preferences.duration, preferences.equipment, preferences.lowImpact, usedRefuelIds]);
 
   const startFirstSession = () => {
-    const focus = balance.neglected[0] as Parameters<typeof generateSession>[0] ?? "legs";
+    const focus = preferences.goal === "weight-loss" ? "cardio" : preferences.goal === "build-strength" ? "legs" : balance.neglected[0] as Parameters<typeof generateSession>[0] ?? "legs";
     const firstDay = preferredDays[0] ?? 0;
     placeSession(`${firstDay}-pm`, generateSession(focus, preferences.intensity, generationOptions));
   };
@@ -101,7 +103,8 @@ export default function Planner() {
     preferredDays.forEach((day, index) => {
       const slot = `${day}-pm` as Slot;
       if (!plan[slot]) {
-        const session = generateSession(focusOrder[index % focusOrder.length], preferences.intensity, { ...generationOptions, excludeRefuelIds: used });
+        const goalFocus = preferences.goal === "weight-loss" && index % 3 === 1 ? "cardio" : preferences.goal === "build-strength" && index % 3 !== 1 ? "legs" : focusOrder[index % focusOrder.length];
+        const session = generateSession(goalFocus, preferences.intensity, { ...generationOptions, excludeRefuelIds: used });
         if (session.refuelDetail) used.push(session.refuelDetail.id);
         placeSession(slot, session);
       }
@@ -119,8 +122,8 @@ export default function Planner() {
   const todaySession = plan[todaySlot];
   const activeWorkoutIsToday = activeWorkout?.slot === todaySlot;
   const openWorkout = (slot: Slot) => {
-    if (startWorkout(slot) || activeWorkout?.slot === slot) setWorkoutOpen(true);
-    else if (activeWorkout) setWorkoutOpen(true);
+    if (startWorkout(slot) || activeWorkout?.slot === slot) window.setTimeout(() => { window.location.href = `/workout?slot=${encodeURIComponent(slot)}`; }, 0);
+    else if (activeWorkout) window.setTimeout(() => { window.location.href = "/workout"; }, 0);
   };
 
   // The saved plan exists only in the browser. Render a stable shell first so
@@ -139,8 +142,12 @@ export default function Planner() {
             gym<span className="text-emerald-700">&amp;</span>tonic
           </a>
           <span className="hidden text-sm italic text-stone-400 sm:inline">a little less “should I train today?”</span>
+          <div className="hidden items-center gap-1 rounded-full border border-[#e6e1d4] bg-white p-1 md:flex">
+            {[['today', 'Today', '/today'], ['plan', 'Plan', '/plan'], ['progress', 'Progress', '/progress'], ['meals', 'Meals', '/meals']].map(([id, label, href]) => <a key={id} href={href} aria-current={id === 'plan' ? 'page' : undefined} className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${id === 'plan' ? 'bg-[#31572c] text-white' : 'text-stone-500 hover:text-stone-900'}`}>{label}</a>)}
+          </div>
           <div className="ml-auto flex items-center gap-2">
             <a href="/tools" className="hidden rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 hover:bg-white hover:text-emerald-800 lg:inline">Coach tools</a>
+            <a href="/settings" aria-current={undefined} className="hidden rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 hover:bg-white hover:text-emerald-800 sm:inline">Settings</a>
             <DataControls />
             {mcpStatus && !mcpStatus.supported && (
               <button
@@ -163,6 +170,10 @@ export default function Planner() {
           </div>
         </div>
       </header>
+
+      <nav className="mx-auto grid max-w-6xl grid-cols-4 border-b border-[#e6e1d4] bg-[#f7f5ef] px-2 py-1 md:hidden" aria-label="App navigation">
+        {[['today', 'Today', '/today'], ['plan', 'Plan', '/plan'], ['progress', 'Progress', '/progress'], ['meals', 'Meals', '/meals']].map(([id, label, href]) => <a key={id} href={href} aria-current={id === 'plan' ? 'page' : undefined} className={`min-h-11 py-3 text-center text-[11px] font-bold ${id === 'plan' ? 'text-[#31572c]' : 'text-stone-500'}`}>{label}</a>)}
+      </nav>
 
       <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-8">
         {/* hero */}
@@ -197,7 +208,7 @@ export default function Planner() {
 
         {activeWorkout && !workoutOpen && <section className="surface-card mb-6 flex flex-wrap items-center justify-between gap-4 border-amber-500/30 bg-amber-50 px-5 py-4" aria-label={activeWorkoutIsToday ? "Today's workout in progress" : "Workout in progress"}>
           <div><p className="eyebrow text-amber-800">{activeWorkoutIsToday ? `Workout in progress · Today’s ${todayWhen === "am" ? "morning" : "evening"}` : "Workout in progress"}</p><p className="mt-1 font-serif text-xl font-semibold">{plan[activeWorkout.slot]?.title ?? "Your session"}</p><p className="text-xs text-stone-500">Your progress and timer are saved on this device.</p></div>
-          <div className="flex flex-wrap gap-2"><button onClick={() => setWorkoutOpen(true)} className="button-primary bg-amber-700 hover:bg-amber-600">Resume workout</button>{activeWorkoutIsToday && !completions[todaySlot] && <button onClick={() => completeSession(todaySlot) && setReflectionSlot(todaySlot)} className="button-secondary">Mark complete</button>}</div>
+          <div className="flex flex-wrap gap-2"><button onClick={() => window.location.href = "/workout"} className="button-primary bg-amber-700 hover:bg-amber-600">Resume workout</button>{activeWorkoutIsToday && !completions[todaySlot] && <button onClick={() => completeSession(todaySlot) && setReflectionSlot(todaySlot)} className="button-secondary">Mark complete</button>}</div>
         </section>}
 
         {todaySession && !activeWorkoutIsToday && <section className="surface-card mb-6 flex flex-wrap items-center justify-between gap-4 border-emerald-700/20 bg-emerald-50/60 px-5 py-4" aria-label="Today's session">
@@ -289,12 +300,14 @@ export default function Planner() {
         )}
 
         {/* the grid */}
-        <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
           <div><p className="eyebrow text-stone-400">The week at a glance</p><h2 className="font-serif text-2xl font-semibold">Your training board.</h2></div>
-          <div className="flex items-center gap-2"><p className="hidden text-xs text-stone-400 sm:block">Select a session for the full story · + to add</p>{plannedCount > 0 && <button onClick={() => setShowCompletedOnly((value) => !value)} aria-pressed={showCompletedOnly} className="button-secondary px-3 py-2 text-[11px]">{showCompletedOnly ? "Showing completed" : "Completed only"}</button>}</div>
+          <div className="flex items-center gap-2"><div className="flex rounded-full border border-[var(--line)] bg-white p-1" role="group" aria-label="Board view"><button onClick={() => setBoardView("day")} aria-pressed={boardView === "day"} className={`rounded-full px-3 py-1.5 text-[11px] font-bold md:hidden ${boardView === "day" ? "bg-[var(--sage-deep)] text-white" : "text-stone-500"}`}>Selected day</button><button onClick={() => setBoardView("week")} aria-pressed={boardView === "week"} className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${boardView === "week" ? "bg-[var(--sage-deep)] text-white" : "text-stone-500"}`}>Full week</button></div>{plannedCount > 0 && <button onClick={() => setShowCompletedOnly((value) => !value)} aria-pressed={showCompletedOnly} className="button-secondary px-3 py-2 text-[11px]">{showCompletedOnly ? "Showing completed" : "Completed only"}</button>}</div>
         </div>
-        <p className="mb-2 text-xs text-stone-500 sm:hidden">Swipe sideways to see all seven days. Tap a session to view its story.</p>
-        <div className="overflow-x-auto rounded-2xl pb-2">
+        <div className="mb-3 flex gap-1 overflow-x-auto pb-1 md:hidden" aria-label="Choose a day">{DAYS.map((day, index) => <button key={day + index} onClick={() => setSelectedDay(index)} aria-pressed={selectedDay === index} className={`min-h-11 min-w-11 rounded-xl px-2 text-xs font-bold ${selectedDay === index ? "bg-[var(--sage-deep)] text-white" : "border border-[var(--line)] bg-white text-stone-500"}`}>{day}</button>)}</div>
+        <p className="mb-2 text-xs text-stone-500 md:hidden">Selected day shows morning and evening. Choose Full week to swipe across all seven days.</p>
+        <div className="mb-4 grid gap-3 md:hidden">{boardView === "day" && (["am", "pm"] as const).map((when) => { const slot = `${selectedDay}-${when}` as Slot; const s = plan[slot]; return s ? <div key={slot} className={`surface-card p-4 ${showCompletedOnly && !completions[slot] ? "hidden" : ""}`}><p className="eyebrow text-[var(--sage)]">{DAYS[selectedDay]} · {when === "am" ? "Morning" : "Evening"}</p><h3 className="mt-1 font-serif text-xl font-semibold">{s.title}</h3><p className="mt-1 text-sm text-stone-500">{s.minutes} min · {s.intensity}</p><div className="mt-3 flex flex-wrap gap-2"><button className="button-secondary" onClick={() => setStorySlot(slot)}>View details</button><button className="button-primary" onClick={() => openWorkout(slot)} disabled={!!completions[slot]}>Start workout</button><button className="button-secondary" aria-pressed={!!completions[slot]} onClick={() => completions[slot] ? uncompleteSession(slot) : completeSession(slot) && setReflectionSlot(slot)}>{completions[slot] ? "✓ Done" : "Mark done"}</button></div></div> : <button key={slot} onClick={() => setSlotMenu(slot)} className="flex min-h-[96px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-stone-300 text-sm text-stone-500 hover:border-emerald-600 hover:text-emerald-700" aria-label={`Add a ${when} session on ${DAYS[selectedDay]}`}>+ Add {when === "am" ? "morning" : "evening"} session</button>; })}</div>
+        <div className={`${boardView === "week" ? "block" : "hidden md:block"} overflow-x-auto rounded-2xl pb-2`}>
           <table className="w-full min-w-[720px] border-separate" style={{ borderSpacing: "0 10px" }}>
             <thead>
               <tr>
@@ -324,7 +337,7 @@ export default function Planner() {
                             >
                             <p className="text-[10px] font-bold uppercase tracking-wide opacity-70">{FOCUS_META[s.focus].icon} {s.focus}</p>
                             <p className="mt-0.5 font-serif text-sm font-semibold leading-tight">{s.title}</p>
-                            <p className="mt-1 text-[11px] opacity-80">{s.minutes} min · {s.intensity}{s.refuel ? ` · 🍽️` : ""}</p>
+                            <p className="mt-1 text-[11px] opacity-80">{s.minutes} min · {intensityLabel(s.intensity)}{s.refuel ? ` · 🍽️` : ""}</p>
                             </button>
                             <button onClick={() => completions[slot] ? uncompleteSession(slot) : completeSession(slot) && setReflectionSlot(slot)} aria-pressed={!!completions[slot]} aria-label={completions[slot] ? `Mark ${s.title} incomplete` : `Mark ${s.title} complete`} className={`mt-3 rounded-full px-2.5 py-1 text-[10px] font-bold transition ${completions[slot] ? "bg-emerald-700 text-white" : "bg-black/10 text-black/60 hover:bg-emerald-700 hover:text-white"}`}>{completions[slot] ? "✓ Done" : "Mark done"}</button>
                             {!completions[slot] && <button onClick={() => openWorkout(slot)} aria-label={`Start guided workout for ${s.title}`} className="mt-3 ml-1 rounded-full border border-black/15 px-2.5 py-1 text-[10px] font-bold text-black/60 transition hover:bg-black/10">Start</button>}
@@ -346,7 +359,7 @@ export default function Planner() {
                           >
                             <span className="text-lg leading-none transition-transform group-hover:scale-125">+</span>
                             <span className="mt-1 text-[11px] capitalize">Add {when} session</span>
-                            <span className="hidden text-[9px] italic opacity-60 group-hover:inline">{GHOST_COPY_KENYA[d]}</span>
+                            <span className="hidden text-[9px] italic opacity-60 group-hover:inline">{GHOST_COPY[d]}</span>
                           </button>
                         )}
                       </td>
@@ -406,9 +419,10 @@ export default function Planner() {
           </section>
         )}
 
-        <footer className="mt-12 text-center text-sm text-stone-400">
-          An agent can fill the blanks, swap a session, or plan the whole week.{" "}
-          <span className="italic">See how it works →</span>
+        <footer className="mt-12 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center text-sm text-stone-500">
+          <span>An agent can fill the blanks, swap a session, or plan the whole week.</span>
+          <a href="/" className="font-semibold text-emerald-800 underline underline-offset-4">How it works →</a>
+          <a href="/privacy" className="underline underline-offset-4">Privacy</a>
         </footer>
       </main>
 

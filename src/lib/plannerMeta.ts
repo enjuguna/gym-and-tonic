@@ -1,4 +1,5 @@
 import type { MuscleGroup } from "./types";
+import type { Intensity } from "./types";
 
 export const GROUPS = ["legs", "push", "pull", "core", "cardio", "mobility"] as const satisfies readonly MuscleGroup[];
 export const FOCUS_META: Record<MuscleGroup, { icon: string; chip: string }> = {
@@ -14,4 +15,8 @@ export function weekPhase(count: number): string {
   if (count < 7) return "A fresh little start";
   if (count < 13) return "Momentum week — build like a lion.";
   return "Finisher mode";
+}
+
+export function intensityLabel(value: Intensity): string {
+  return value === "light" ? "Easy" : value === "brutal" ? "Challenging" : "Moderate";
 }

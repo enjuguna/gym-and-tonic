@@ -8,7 +8,7 @@ VO: "Fourteen slots a week. One question that never stops: should I train today?
 
 **0:15–0:35 The grid.**
 Show the 14-slot week grid, color chips, empty dashed slots.
-VO: "Every session lives here. Muscle-group color coding, minutes, and a post-workout plate from home."
+VO: "Every session lives here. Clear focus, minutes, a guided workout, and a practical meal idea for afterward."
 
 **0:35–1:15 The coach works (the WebMCP money shot).**
 In ChatGPT's built-in browser beside the page:

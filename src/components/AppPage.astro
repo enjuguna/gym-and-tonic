@@ -1,0 +1,7 @@
+---
+import "../styles/global.css";
+import { AppNav } from "./AppNav";
+import { ConnectionStatus } from "./ui/ConnectionStatus";
+const { active, title, description } = Astro.props;
+---
+<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><link rel="manifest" href="/manifest.webmanifest" /><link rel="icon" href="/favicon.svg" /><meta name="theme-color" content="#31572c" /><title>{title} — Gym &amp; Tonic</title></head><body class="grain min-h-screen bg-[var(--paper)] text-[var(--ink)]"><a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to content</a><AppNav active={active} /><ConnectionStatus client:load /><main id="main-content" class="mx-auto max-w-6xl px-5 py-10 pb-24 sm:px-8 sm:py-14"><p class="eyebrow text-[var(--sage)]">{description}</p><h1 class="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-5xl">{title}</h1><slot /></main><footer class="mx-auto max-w-6xl border-t border-[var(--line)] px-5 py-7 text-xs text-[var(--muted)] sm:px-8"><a href="/" class="hover:text-[var(--ink)]">Public site</a> · <a href="/privacy" class="hover:text-[var(--ink)]">Privacy</a> · <a href="/data" class="hover:text-[var(--ink)]">Data</a> · <a href="/safety" class="hover:text-[var(--ink)]">Safety</a> · <a href="/tools" class="hover:text-[var(--ink)]">Coach tools</a></footer></body></html>

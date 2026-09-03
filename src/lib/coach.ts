@@ -11,11 +11,39 @@ export const EXERCISES: Exercise[] = [
   { id: "ex-pullup", name: "Pull-ups", group: "pull", duration: 8, equipment: ["bar"], cues: "Chest to bar. No swinging — this isn't a playground." },
   { id: "ex-plank", name: "Plank", group: "core", duration: 5, equipment: [], cues: "Squeeze everything. Breathe anyway." },
   { id: "ex-hlr", name: "Hanging leg raises", group: "core", duration: 6, equipment: ["bar"], cues: "Curl the pelvis. Toes to the sky, ego to the floor." },
-  { id: "ex-run", name: "Karura trail run", group: "cardio", duration: 30, equipment: [], cues: "Red dirt underfoot, canopy overhead. Zone 2 — gossip pace." },
+  { id: "ex-run", name: "Easy outdoor run", group: "cardio", duration: 30, equipment: [], cues: "Keep the pace conversational and land softly." },
   { id: "ex-skipping", name: "Skipping rope", group: "cardio", duration: 10, equipment: ["rope"], cues: "Wrists spin it, not arms. Light feet, quiet landings." },
   { id: "ex-yoga", name: "Mobility flow", group: "mobility", duration: 20, equipment: ["mat"], cues: "Slow exhale into every stretch. Slow is smooth, smooth is fast." },
   { id: "ex-kettlebell", name: "Kettlebell swings", group: "cardio", duration: 8, equipment: ["kettlebell"], cues: "Hips snap, arms are ropes. Float at the top." },
+  { id: "ex-walk", name: "Brisk outdoor walk", group: "cardio", duration: 20, equipment: [], cues: "Walk tall and use a pace you can sustain." },
+  { id: "ex-chair-squat", name: "Chair squats", group: "legs", duration: 8, equipment: ["chair"], cues: "Tap the chair gently, then stand with control." },
+  { id: "ex-glute-bridge", name: "Glute bridges", group: "legs", duration: 8, equipment: [], cues: "Press through the feet and pause at the top." },
+  { id: "ex-step-up", name: "Step-ups", group: "legs", duration: 8, equipment: ["step"], cues: "Use a stable step and drive through the whole foot." },
+  { id: "ex-wall-push", name: "Wall push-ups", group: "push", duration: 8, equipment: [], cues: "Keep your body in one line and move slowly." },
+  { id: "ex-incline-push", name: "Incline push-ups", group: "push", duration: 8, equipment: ["bench"], cues: "Hands under shoulders; lower with a steady breath." },
+  { id: "ex-band-row", name: "Resistance-band row", group: "pull", duration: 8, equipment: ["band"], cues: "Pull elbows back and keep shoulders relaxed." },
+  { id: "ex-bird-dog", name: "Bird dog", group: "core", duration: 6, equipment: [], cues: "Reach long while keeping hips level." },
+  { id: "ex-dead-bug", name: "Dead bug", group: "core", duration: 6, equipment: [], cues: "Move slowly and keep your lower back comfortable." },
+  { id: "ex-side-plank", name: "Side plank", group: "core", duration: 6, equipment: [], cues: "Lift from the waist and breathe steadily." },
+  { id: "ex-calf-raise", name: "Calf raises", group: "legs", duration: 6, equipment: [], cues: "Rise smoothly, pause, and lower with control." },
+  { id: "ex-marching", name: "Standing march", group: "cardio", duration: 8, equipment: [], cues: "Stand tall and choose a rhythm you can repeat." },
+  { id: "ex-step-touch", name: "Step touch", group: "mobility", duration: 8, equipment: [], cues: "Keep it light and let your arms move naturally." },
+  { id: "ex-cat-cow", name: "Cat-cow mobility", group: "mobility", duration: 6, equipment: [], cues: "Move through a comfortable range with your breath." },
+  { id: "ex-hip-flow", name: "Hip mobility flow", group: "mobility", duration: 8, equipment: ["mat"], cues: "Stay gentle and stop short of pinching or pain." },
+  { id: "ex-sit-to-stand", name: "Sit to stand", group: "legs", duration: 8, equipment: ["chair"], cues: "Stand tall from a stable chair and lower slowly." },
+  { id: "ex-reverse-fly", name: "Band reverse fly", group: "pull", duration: 8, equipment: ["band"], cues: "Open the arms without shrugging and keep the ribs relaxed." },
 ];
+
+// Keep the instructional contract complete for every movement, including
+// legacy and agent-provided sessions that only contain the original fields.
+// The cue remains the short on-screen coaching line; this is the fuller,
+// plain-language instruction used by the exercise detail surface.
+EXERCISES.forEach((exercise) => {
+  exercise.instructions ??= `Set up with ${exercise.equipment.length ? exercise.equipment.join(" and ") : "no equipment"}. ${exercise.cues} Work for the full ${exercise.duration}-minute block at a pace you can control.`;
+  exercise.impact ??= exercise.group === "cardio" ? "moderate" : exercise.group === "mobility" ? "low" : "moderate";
+  exercise.easierAlternative ??= exercise.group === "legs" ? "Use a chair or reduce the range of motion." : exercise.group === "push" ? "Use a wall or a higher surface." : exercise.group === "pull" ? "Use a lighter band or reduce the range." : exercise.group === "cardio" ? "Slow down and keep the effort conversational." : exercise.group === "mobility" ? "Shorten the range and move gently." : "Keep one knee or hand supported.";
+  exercise.blockMinutes ??= exercise.duration;
+});
 
 const byId = new Map(EXERCISES.map((e) => [e.id, e]));
 export const exerciseById = (id: string) => byId.get(id);
@@ -61,49 +89,49 @@ export function balanceCheck(sessions: Array<Session | null>): BalanceReport {
   return { totalMinutes: total, perGroup, neglected, verdict };
 }
 
-// Descriptive Kenyan-rooted titles per focus.
+// Clear, encouraging titles that work across regions.
 const TITLES: Record<string, string[]> = {
   legs: [
-    "Karura Stair Day",
-    "Ngong Hills Simulator",
-    "The Squat Parliament",
-    "Matatu-Free Legs",
-    "Deep Knees, Deep Breath",
+    "Strong Legs Start Here",
+    "Steady Lower Body",
+    "Legs and Balance",
+    "Build Your Base",
+    "Lower Body Reset",
   ],
   push: [
-    "Overhead & Out",
-    "The Press Briefing",
-    "Shoulders of Nairobi",
-    "Bench & Beyond",
-    "Push Past Westlands",
+    "Upper Body Push",
+    "Press and Progress",
+    "Strong Shoulders",
+    "Chest and Triceps",
+    "Push with Control",
   ],
   pull: [
-    "Pull Rank Monday",
-    "Rope & Row Republic",
-    "Grip the Bar, Hold the Line",
-    "Back Day Blues Cure",
-    "Hang Tough, Lift Heavy",
+    "Back and Grip",
+    "Rows and Pulls",
+    "Build Your Back",
+    "Strong Posture",
+    "Pull with Control",
   ],
   core: [
-    "Center of Gravity",
-    "Core Ya Kawaida? Never.",
-    "Abs Under Construction",
-    "Steady Middle, Steady Life",
-    "Planks & Promises",
+    "Core Foundations",
+    "Steady Center",
+    "Core in Control",
+    "Build Core Strength",
+    "Strong from the Middle",
   ],
   cardio: [
-    "Karuta Red Dirt Run",
-    "Uhuru Gardens Loop",
-    "Sunrise to Kasarani",
-    "Lungs of the Rift",
-    "Skip the Matatu Today",
+    "Easy Cardio Start",
+    "Brisk Walk Builder",
+    "Cardio and Confidence",
+    "Build Your Engine",
+    "Move at Your Pace",
   ],
   mobility: [
-    "Pole Pole Flow",
-    "Stretch Club Saturday",
-    "Oil the Hinges",
-    "Human Pretzel Hour",
-    "Breathe & Unwind",
+    "Gentle Mobility",
+    "Stretch and Reset",
+    "Move with Ease",
+    "Full Body Unwind",
+    "Breathe and Move",
   ],
 };
 
@@ -120,10 +148,11 @@ export function generateSession(
   intensity: Session["intensity"] = "moderate",
   options: SessionGenerationOptions = {},
 ): Session {
+  const impactSafe = options.lowImpact ? EXERCISES.filter((e) => !["ex-run", "ex-skipping", "ex-kettlebell", "ex-step-up"].includes(e.id)) : EXERCISES;
   const equipmentPool = options.equipment === "home"
-    ? EXERCISES.filter((e) => e.group === focus && e.equipment.length === 0)
-    : EXERCISES.filter((e) => e.group === focus);
-  const pool = options.equipment === "home" && equipmentPool.length > 0 ? equipmentPool : EXERCISES.filter((e) => e.group === focus);
+    ? impactSafe.filter((e) => e.group === focus && e.equipment.length === 0)
+    : impactSafe.filter((e) => e.group === focus);
+  const pool = equipmentPool.length > 0 ? equipmentPool : impactSafe.filter((e) => e.group === focus);
   const count = options.duration === "under30"
     ? 2
     : options.duration === "45plus" || intensity === "brutal"

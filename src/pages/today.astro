@@ -1,0 +1,5 @@
+---
+import AppPage from "../components/AppPage.astro";
+import TodayDashboard from "../components/TodayDashboard";
+---
+<AppPage active="today" title="Today" description="A manageable next step"><TodayDashboard client:only="react" /></AppPage>

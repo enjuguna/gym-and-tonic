@@ -1,11 +1,14 @@
-const CACHE = "gym-tonic-shell-v1";
-const APP_SHELL = ["/", "/plan", "/privacy", "/data", "/safety", "/manifest.webmanifest"];
+const CACHE = "gym-tonic-shell-v3";
+const APP_SHELL = ["/", "/today", "/plan", "/progress", "/meals", "/settings", "/workout", "/privacy", "/data", "/safety", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
 
-self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener("activate", (event) => event.waitUntil(
+  caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+    .then(() => self.clients.claim()),
+));
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;

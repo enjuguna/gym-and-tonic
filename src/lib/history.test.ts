@@ -75,4 +75,10 @@ describe("progress report", () => {
     expect(r.completedMinutes).toBe(30);
     expect(r.consistencyPct).toBe(50);
   });
+
+  it("counts active weeks rather than adjacent sessions as the streak", () => {
+    const plan = { "0-am": mk("a", "legs", 30), "6-pm": mk("b", "push", 40) };
+    const r = progressReport(plan, { "0-am": { completedAt: 1 }, "6-pm": { completedAt: 1 } });
+    expect(r.currentStreak).toBe(1);
+  });
 });

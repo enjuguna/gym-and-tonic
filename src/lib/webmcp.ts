@@ -1,10 +1,11 @@
-// Gym & Tonic WebMCP layer — 15 coach tools.
+// Gym & Tonic WebMCP layer — 17 coach tools.
 // Read tools inspect the week; write tools stage proposals for approval.
 
 import { usePlan, DAYS } from "./store";
 import { EXERCISES, balanceCheck, gearList, generateSession, exerciseById } from "./coach";
 import { adaptiveGuidance, loadHistory, overloadCheck, progressReport } from "./history";
-import { refuelIdsFromSessions } from "./kenyanFlavor";
+import { REFUEL_CATALOG, refuelIdsFromSessions } from "./kenyanFlavor";
+import { loadTracking } from "./tracking";
 import { loadTemplates } from "./templates";
 import { planToICS } from "./calendar";
 import type { Session, Slot } from "./types";
@@ -342,6 +343,36 @@ export const getCalendarPlanTool = tool(
     const plan = usePlan.getState().plan;
     const events = Object.entries(plan).map(([slot, session]) => ({ slot, title: session.title, focus: session.focus, intensity: session.intensity, minutes: session.minutes }));
     return { eventCount: events.length, events, ics: planToICS(plan) };
+  },
+);
+
+export const getFitnessPreferencesTool = tool(
+  {
+    name: "get_fitness_preferences",
+    title: "Get fitness preferences",
+    description: "Returns non-sensitive fitness preferences so a coach can tailor suggestions. Private weight entries are never included.",
+    inputSchema: obj({}),
+    readOnly: true,
+  },
+  () => {
+    const { goal, dietaryPreference, weightUnit, selectedHabits } = loadTracking();
+    const { preferences } = usePlan.getState();
+    return { goal: goal ?? preferences.goal ?? "general-fitness", dietaryPreference, weightUnit, selectedHabits, duration: preferences.duration, equipment: preferences.equipment, intensity: preferences.intensity };
+  },
+);
+
+export const listMealIdeasTool = tool(
+  {
+    name: "list_meal_ideas",
+    title: "List meal ideas",
+    description: "Returns shared meal ideas filtered by a dietary preference or search term. Suggestions are informational and contain no personal food log.",
+    inputSchema: obj({ dietaryPreference: { type: "string", enum: ["omnivore", "vegetarian", "vegan", "pescatarian"] }, search: { type: "string" } }),
+    readOnly: true,
+  },
+  ({ dietaryPreference, search }: { dietaryPreference?: string; search?: string }) => {
+    const query = (search ?? "").toLowerCase();
+    const meals = REFUEL_CATALOG.filter((meal) => `${meal.title} ${meal.plate}`.toLowerCase().includes(query) && (dietaryPreference === undefined || dietaryPreference === "omnivore" || meal.tags.includes(dietaryPreference === "vegetarian" && meal.tags.includes("vegan") ? "vegan" : dietaryPreference as never)));
+    return { count: meals.length, meals };
   },
 );
 

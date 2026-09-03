@@ -1,0 +1,7 @@
+import { APP_ROUTES, type AppRoute } from "../lib/routes";
+
+export type { AppRoute } from "../lib/routes";
+
+export function AppNav({ active }: { active: AppRoute }) {
+  return <nav className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--paper)]/95 backdrop-blur" aria-label="App navigation"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"><a href="/today" aria-label="Gym and Tonic Today" className="font-display text-xl font-semibold tracking-tight">gym<span className="text-[var(--sage)]">&amp;</span>tonic</a><div className="hidden items-center gap-1 rounded-full border border-[var(--line)] bg-white p-1 md:flex">{APP_ROUTES.map(({ id, label, href }) => <a key={id} href={href} aria-current={active === id ? "page" : undefined} className={`rounded-full px-4 py-2 text-xs font-bold ${active === id ? "bg-[var(--sage-deep)] text-white" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}>{label}</a>)}</div><a href="/settings" aria-current={active === "settings" ? "page" : undefined} className={`button-secondary px-3 py-2 text-[11px] ${active === "settings" ? "border-[var(--sage)] bg-emerald-50" : ""}`}>Settings</a></div><div className="mx-auto grid max-w-6xl grid-cols-4 border-t border-[var(--line)] px-2 py-1 md:hidden">{APP_ROUTES.map(({ id, label, href }) => <a key={id} href={href} className={`min-h-11 py-3 text-center text-[11px] font-bold ${active === id ? "text-[var(--sage-deep)]" : "text-[var(--muted)]"}`} aria-current={active === id ? "page" : undefined}>{label}</a>)}</div></nav>;
+}
