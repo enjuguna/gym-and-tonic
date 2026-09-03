@@ -1,8 +1,10 @@
-# Gym & Tonic — Your week, well trained.
+# Gym & Tonic: Your week, well trained.
 
 **A weekly training planner where ChatGPT is your coach.** Fourteen session slots a week (Mon–Sun × AM/PM), planned together on one live grid: the agent proposes sessions, swaps them around, aggregates your gear list, and calls you out when leg day goes missing — every change staged as a reviewable proposal you approve.
 
-Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) · September 2026.
+Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) in September 2026.
+
+[Try the live Vercel deployment](https://gym-and-tonic-five.vercel.app/)
 
 ## Why
 
@@ -12,7 +14,7 @@ Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) · Septembe
 - Every write is a **staged proposal**: 🟢 new session, 🟡 swap, 🔴 callout ("No leg day?! The squats know what you did.").
 - You approve, reject, or drag things around yourself. The coach suggests; you decide.
 
-## The 17 site tools
+## The 17 WebMCP site tools
 
 | Tool | Type | What it does |
 |---|---|---|
@@ -40,12 +42,17 @@ Gym & Tonic is English-led and designed for people starting or returning to exer
 
 ## Product experience
 
-- `/` is a shareable product showcase; `/today` is the daily dashboard, `/plan` is the full weekly planner, and `/workout` is the focused guided-workout screen. `/progress`, `/meals`, and `/settings` provide focused supporting views.
+- `/` is the public product showcase.
+- `/today` is the daily dashboard for the next workout, habits, and quick check-ins.
+- `/plan` is the fourteen-slot weekly planner with proposals, templates, and calendar export.
+- `/workout` is the focused guided-workout screen with optional timers and reflection.
+- `/progress`, `/meals`, and `/settings` provide focused supporting views.
+- `/tools`, `/privacy`, `/data`, and `/safety` remain available for agent tools, trust information, and local data controls.
 - Plans, reflections, progress, and active workouts are stored in the browser. Users can export, restore, or explicitly delete their local data.
 
 ## Verification
 
-Run `npm test`, `npm run check`, `npm run typecheck`, and `npm run build` for the application gates. Run `npm run test:e2e` after `npm run build` for isolated Chromium and WebKit browser journeys; the suite uses deterministic local test data and never touches a user's saved plan.
+Run `npm test`, `npm run check`, `npm run typecheck`, and `npm run build` for the application gates. Run `npm run test:e2e` for isolated Chromium and WebKit browser journeys; the suite uses deterministic local test data and never touches a user's saved plan. Chromium is the local default, while CI installs the full browser matrix.
 - The app shell and curated editorial images are available after the first successful load, even when connectivity drops.
 - Production-only Plausible analytics can measure high-level product actions. It never receives session content, notes, reflections, or history; users can opt out in Data controls.
 
@@ -55,7 +62,7 @@ Read [Privacy](/privacy), [Your data](/data), and [Safety](/safety) before a pub
 
 Astro · React island · Zustand · Tailwind · WebMCP · Web Audio · Vercel. No backend, no accounts, no payments, MIT licensed.
 
-## Run it
+## Run it locally
 
 ```bash
 npm install
@@ -64,6 +71,11 @@ npm test
 npm run check
 npm run typecheck
 npm run build
+npm run test:e2e
 ```
 
-Full experience: Chrome with WebMCP or the ChatGPT desktop app's built-in browser. Without an agent it works as a manual planner.
+The dev server runs at `http://localhost:4321`. The full experience is available in Chrome with WebMCP or in the ChatGPT desktop app's built-in browser. Without an agent it works as a manual planner.
+
+## License
+
+Gym & Tonic is released under the [MIT License](LICENSE).
